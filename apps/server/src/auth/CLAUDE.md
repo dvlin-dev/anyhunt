@@ -9,7 +9,7 @@ Bearer Token 合同。
 - 产品 API 接受 `Authorization: Bearer <accessToken>`。
 - 邮箱密码或邮箱 OTP 登录成功后返回 Access Token 与 Refresh Token。
 - Refresh Token 从请求体读取，每次刷新时轮换，并可由 logout/sign-out 幂等撤销。
-- Access Token 中的 `subscriptionTier` 只根据有效订阅计算。
+- Access Token 只承载身份和授权所需声明，不包含订阅等级、Credits 或产品配额。
 - `RequireAdmin` 检查持久化管理员标记；`ADMIN_EMAILS` 用于初始化该标记。
 - 生产配置必须定义规范 Auth URL、可信 Origin、安全 Cookie 行为与强密钥。
 

@@ -11,5 +11,5 @@
 - 页面消费功能模块导出，不直接调用共享 HTTP 客户端。
 - 共享传输、认证与错误标准化保留在 `src/lib`。
 
-当前功能组覆盖产品运营、账号与计费、队列与任务、请求日志、Digest 配置与举报，以及
-LLM 配置。
+产品功能组围绕用户、Topic、Subscription、Skill、Run、Delivery、举报、队列、请求日志、
+LLM Provider 和 MCP 状态组织。不得新增 Billing、Credits、订单、兑换码或会员等级功能组。

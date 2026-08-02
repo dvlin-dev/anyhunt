@@ -1,6 +1,6 @@
 # Browser
 
-供 Digest 抓取器使用的内部 Playwright 浏览器池。
+供 Agent Web Tool 与抓取器使用的内部 Playwright 浏览器池。
 
 ## 职责
 

@@ -1,15 +1,17 @@
-# Digest
+# 旧 Digest Runtime
 
-Digest 是核心产品领域：订阅负责调度采集 Run，Run 筛选并总结内容，Edition 保留证据，
-投递形成阅读端收件箱。
+本目录承载现有固定 Digest 流水线，只作为 Topic/Pi 架构迁移的事实输入，不再新增产品能力、
+领域模型或兼容层。目标领域拆分为 `agent`、`topic`、`subscription`、`inbox` 和 `delivery`，
+删除路径以 `docs/plans/2026-08-02-anyhunt-1.0.md` 为准。
 
-## 职责
+## 迁移边界
 
-- Topic、Source、Subscription、Run、Edition、Item、收件箱状态、反馈、举报、欢迎内容与投递。
-- 已认证阅读端 API、公开 Topic/Edition API 与 Digest 专属 Admin API，统一使用 API 版本 `1`。
-- Source 刷新、Subscription Run、邮件与 Webhook 的调度和执行队列。
+- Source、Edition、Content、Score、Feedback Pattern 和固定 AI Pipeline 不进入目标架构。
+- 旧数据必须经过可重复 dry-run、数量核对和可恢复备份后迁移，禁止静默丢弃。
+- 旧公开 Edition URL 可以保留，但后端实体改为成功 Run。
+- 旧队列生产者停止且队列清空后，才能删除模型与消费者。
 
-## 合同
+## 删除前必须保持的合同
 
 - 列表 API 使用 `page` 与 `limit`，返回：
 
@@ -24,10 +26,7 @@ type PaginatedResponse<T> = {
 ```
 
 - Scheduler Job 与 Run Job 必须幂等；Redis 锁避免重复调度，持久化 Run 状态是权威事实。
-- 排序前通过规范 URL 与内容指纹去重。
 - RSS、爬取与 Webhook URL 统一使用共享 SSRF Guard，包括每次重定向。
 - 无效 Webhook 目标不可恢复；临时投递失败允许重试。
-- 订阅限制只根据有效订阅计算。
-- 所有 LLM 调用都通过 `src/llm` 解析 Admin 配置的 Digest 模型；本领域禁止硬编码
-  Provider 凭据或模型 ID。
+- 本领域禁止硬编码 Provider 凭据或模型 ID。
 - `ANYHUNT_WWW_URL` 是阅读链接与退订链接的规范 Base URL。
