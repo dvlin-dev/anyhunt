@@ -1,18 +1,23 @@
 # Anyhunt
 
-Anyhunt 将一个主题转化为持续更新的 AI 精选摘要。它会发现信息源、收集新内容、去除重复、
-筛选重要信息，并将聚焦后的每期内容投递到个人收件箱。
+Anyhunt 将一个 Topic 转化为持续更新的认知流。它通过 Pi Agent 自主调用 Tool/MCP 完成研究，
+交付附有原始证据的聚焦 Digest，并将真实运行中验证有效的方法沉淀为可复用的标准 Skill。
+Topic 持续产生内容，用户通过 Subscription 关注；同一个公开 Topic 只运行一次并共享结果。
 
-长期产品目的与边界以 [`docs/design/product-purpose.md`](docs/design/product-purpose.md)
-为事实源。
+当前代码仍使用固定 Digest 流水线；向上述 1.0 架构迁移的顺序、验证和删除门禁见
+[`docs/plans/2026-08-02-anyhunt-1.0.md`](docs/plans/2026-08-02-anyhunt-1.0.md)。
+
+长期产品目的与边界以 [`docs/design/product-purpose.md`](docs/design/product-purpose.md) 为事实源；
+Agent、Tool/MCP 与 Skill 合同见
+[`docs/design/agent-and-skills.md`](docs/design/agent-and-skills.md)。
 
 ## 工作区
 
-- `apps/server`：认证、计费、Digest 领域、采集与调度
+- `apps/server`：认证、Topic、Subscription、Run、投递、Agent Host、Tool/MCP、Skills、采集与调度
 - `apps/web`：阅读、探索、收件箱与订阅管理
 - `apps/admin`：产品与运营管理
 - `packages/http`：共享函数式 HTTP 客户端
-- `packages/model-bank`：Digest LLM 使用的 Provider 与推理元数据
+- `packages/model-bank`：Agent 使用的 Provider 与推理元数据
 - `packages/ui`：共享 UI 基础组件
 - `packages/editor`：Admin 使用的 Markdown 编辑器
 

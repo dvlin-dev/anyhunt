@@ -1,21 +1,24 @@
 # Anyhunt
 
-Anyhunt 是独立的 AI 信息订阅产品，核心闭环为：
-主题 -> 采集 -> 去重 -> 排序 -> Digest -> 收件箱。
+Anyhunt 是独立的持续信息 Agent 产品，目标核心闭环为：
+Topic -> Pi 自主研究 -> Run/Digest -> 沉淀并复用标准 Skill -> 用户订阅。
 
 ## 边界
 
-- `apps/server` 负责认证、计费、Digest、采集与调度。
+- `apps/server` 负责认证、Topic、Subscription、Run、投递、采集与调度；Pi Agent Host、Tool/MCP 和 Skills 也只能在此落地。
 - `apps/web` 是面向终端用户的阅读端。
 - `apps/admin` 是内部运营端。
-- 采集模块是产品内部能力，不是独立产品。
-- 账号、Token、数据库与计费全部归 Anyhunt 所有。
+- 底层 Agent Runtime 保持通用，但只服务于 Anyhunt 产品闭环，不作为独立开发者平台。
+- 搜索、抓取、RSS、API、SQL 与 Browser 统一作为 Tool/MCP 接入，不建立平台专用 Connector 或 Workflow。
+- Anyhunt 1.0 不接入 Billing、Quota、Payment、Credits、会员等级或 Redemption。
+- 账号、Token、数据库与部署全部归 Anyhunt 所有；未来商业化也必须保持产品间隔离。
 - 跨产品集成必须通过显式 HTTP 合同；产品仓库之间不得共享源码包或持久化层。
 - 密钥只能存在于环境变量中，禁止提交。
 
 ## 知识库
 
-- `docs/design/product-purpose.md` 是唯一的产品目的事实源。
+- `docs/design/product-purpose.md` 是产品目的事实源。
+- `docs/design/agent-and-skills.md` 是 Agent、Tool/MCP 与 Skills 架构事实源。
 - `docs/index.md` 只做导航，历史过程依赖 Git。
 - `README.md` 负责安装、验证与部署入口。
 - 目录级 `CLAUDE.md` 只记录稳定职责、边界、合同与不变量；`AGENTS.md` 是指向它的符号链接。
