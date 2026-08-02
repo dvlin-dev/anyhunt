@@ -1,0 +1,57 @@
+/**
+ * [PROVIDES]: fetchWithSsrGuard - SSRF-safe fetch with redirect validation
+ * [DEPENDS]: UrlValidator
+ * [POS]: Shared HTTP fetch helper for user-provided URLs
+ *
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
+ */
+import { UrlValidator } from '../validators/url.validator';
+import { serverHttpRaw } from '../http/server-http-client';
+import type { ApiClientRequestOptions } from '@anyhunt/http';
+
+export interface SafeFetchOptions extends RequestInit {
+  maxRedirects?: number;
+}
+
+export async function fetchWithSsrGuard(
+  urlValidator: UrlValidator,
+  url: string,
+  options: SafeFetchOptions = {},
+): Promise<Response> {
+  const { maxRedirects = 3, ...fetchOptions } = options;
+  let currentUrl = url;
+  let remaining = maxRedirects;
+
+  while (true) {
+    if (!(await urlValidator.isAllowed(currentUrl))) {
+      throw new Error(`URL not allowed: ${currentUrl}`);
+    }
+
+    const response = await serverHttpRaw({
+      url: currentUrl,
+      method:
+        (fetchOptions.method as
+          'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | undefined) ?? 'GET',
+      headers: fetchOptions.headers,
+      body: fetchOptions.body as ApiClientRequestOptions['body'],
+      signal: fetchOptions.signal ?? undefined,
+      redirect: 'manual',
+    });
+
+    if (response.status < 300 || response.status >= 400) {
+      return response;
+    }
+
+    const location = response.headers.get('location');
+    if (!location) {
+      return response;
+    }
+
+    if (remaining <= 0) {
+      throw new Error('Too many redirects');
+    }
+
+    currentUrl = new URL(location, currentUrl).toString();
+    remaining -= 1;
+  }
+}

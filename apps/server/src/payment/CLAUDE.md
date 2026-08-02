@@ -1,0 +1,104 @@
+# Payment
+
+> This folder structure changes require updating this document.
+
+## Overview
+
+Payment processing integration with Creem. Handles subscriptions, tier upgrades, and pay-as-you-go quota purchases.
+
+## Responsibilities
+
+- Subscription management (create, upgrade, cancel)
+- Pay-as-you-go quota purchases
+- Creem webhook handling
+- Order tracking
+- Tier-based quota allocation
+- Webhook 事件幂等去重（PaymentWebhookEvent）
+
+## Constraints
+
+- Uses Creem as payment provider
+- Webhook endpoint must be fixed to `/api/v1/webhooks/creem`
+- App endpoints use AuthGuard
+- Quota updates must be atomic
+- Webhook 事件必须落库去重（eventId 唯一）
+- 未知产品 ID 必须拒绝处理（不允许默认授予）
+- 配额购买必须校验订单金额/币种与产品配置一致
+
+## File Structure
+
+| File                            | Type       | Description                          |
+| ------------------------------- | ---------- | ------------------------------------ |
+| `payment.service.ts`            | Service    | Payment logic, Creem API integration |
+| `payment.controller.ts`         | Controller | App endpoints for subscriptions      |
+| `payment-webhook.controller.ts` | Controller | Creem webhook handler                |
+| `payment.module.ts`             | Module     | NestJS module definition             |
+| `payment.constants.ts`          | Constants  | Tier configs, prices                 |
+| `payment.types.ts`              | Types      | Creem API types                      |
+| `dto/payment.dto.ts`            | DTO        | Request/response schemas             |
+
+## Payment Flow
+
+### Subscription
+
+```
+User selects tier → Create Creem checkout → Redirect to payment
+    ↓
+Creem webhook (payment.success) → Update user tier → Allocate quota
+```
+
+### Pay-as-you-go
+
+```
+User purchases quota → Create Creem checkout → Redirect to payment
+    ↓
+Creem webhook (payment.success) → Add quota to user balance
+```
+
+## Tier Configuration
+
+| Tier  | Monthly | Quota  | Defined in             |
+| ----- | ------- | ------ | ---------------------- |
+| FREE  | $0      | 100    | `payment.constants.ts` |
+| BASIC | $9      | 5,000  |                        |
+| PRO   | $29     | 20,000 |                        |
+| TEAM  | $79     | 60,000 |                        |
+
+## Common Modification Scenarios
+
+| Scenario             | Files to Modify                              | Notes                     |
+| -------------------- | -------------------------------------------- | ------------------------- |
+| Add tier             | `payment.constants.ts`, `payment.service.ts` | Update Creem products     |
+| Change price         | `payment.constants.ts`                       | Sync with Creem dashboard |
+| Update Creem产品映射 | `payment.constants.ts`                       | 同步 productId/价格/币种  |
+| Add payment method   | `payment.service.ts`                         | Extend Creem integration  |
+| Handle new webhook   | `payment-webhook.controller.ts`              | Add event handler         |
+
+## Webhook Handling
+
+```typescript
+@Controller({ path: 'webhooks/creem', version: '1' })
+export class PaymentWebhookController {
+  @Post()
+  async handleWebhook(@Body() payload: CreemWebhookPayload) {
+    // Verify signature, process event
+  }
+}
+```
+
+## Dependencies
+
+```
+payment/
+├── prisma/ - Order and subscription storage
+├── quota/ - Quota allocation after payment
+├── user/ - User tier updates
+└── email/ - Payment confirmation emails
+```
+
+## Key Exports
+
+```typescript
+export { PaymentModule } from './payment.module';
+export { PaymentService } from './payment.service';
+```

@@ -1,0 +1,146 @@
+/**
+ * [PROPS]: LlmModelsCardProps - models list + callbacks
+ * [EMITS]: onNew/onEdit/onDelete - Models 变更动作
+ * [POS]: Admin LLM 配置页的 Models 区块（完整模型能力与映射）
+ *
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
+ */
+
+import { formatRelativeTime } from '@anyhunt/ui/lib';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@anyhunt/ui';
+import type { LlmModelListItem } from '@/features/llm';
+import { LlmTableState } from './LlmTableState';
+
+export interface LlmModelsCardProps {
+  isLoading: boolean;
+  errorMessage?: string | null;
+  isMutating: boolean;
+  models: LlmModelListItem[];
+  onNew: () => void;
+  onEdit: (model: LlmModelListItem) => void;
+  onDelete: (model: LlmModelListItem) => void;
+}
+
+export function LlmModelsCard({
+  isLoading,
+  errorMessage,
+  isMutating,
+  models,
+  onNew,
+  onEdit,
+  onDelete,
+}: LlmModelsCardProps) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardTitle>Models</CardTitle>
+        <Button onClick={onNew} disabled={isMutating}>
+          New model
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <LlmTableState isLoading={isLoading} errorMessage={errorMessage}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>modelId</TableHead>
+                <TableHead>upstreamId</TableHead>
+                <TableHead>Provider</TableHead>
+                <TableHead>Tier</TableHead>
+                <TableHead>Pricing</TableHead>
+                <TableHead>Context</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Updated</TableHead>
+                <TableHead className="text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {models.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                    No models yet. Create a provider first, then add a mapping.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {models.map((m) => {
+                const updatedAt = m.updatedAt ? formatRelativeTime(new Date(m.updatedAt)) : '';
+                return (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{m.displayName}</span>
+                        <span className="text-xs text-muted-foreground">{m.modelId}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{m.modelId}</TableCell>
+                    <TableCell className="font-mono text-xs">{m.upstreamId}</TableCell>
+                    <TableCell className="text-xs">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{m.providerName}</span>
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {m.providerType}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs">{m.minTier}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      ${m.inputTokenPrice.toFixed(2)} / ${m.outputTokenPrice.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {m.maxContextTokens.toLocaleString()} / {m.maxOutputTokens.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {m.enabled ? (
+                        <Badge variant="secondary">Enabled</Badge>
+                      ) : (
+                        <Badge variant="outline">Disabled</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {updatedAt}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onEdit(m)}
+                          disabled={isMutating}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => onDelete(m)}
+                          disabled={isMutating}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </LlmTableState>
+      </CardContent>
+    </Card>
+  );
+}

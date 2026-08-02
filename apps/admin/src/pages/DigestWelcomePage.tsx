@@ -1,0 +1,108 @@
+/**
+ * Digest Welcome Page
+ *
+ * [PROPS]: none
+ * [POS]: Admin welcome configuration/page management assembly page
+ *
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
+ */
+
+import { Badge, Button, PageHeader } from '@anyhunt/ui';
+import { useDigestWelcomePageController } from './digest-welcome/useDigestWelcomePageController';
+import { WelcomeConfigCard } from './digest-welcome/WelcomeConfigCard';
+import { WelcomePagesCard } from './digest-welcome/WelcomePagesCard';
+import { WelcomePageEditorCard } from './digest-welcome/WelcomePageEditorCard';
+
+export default function DigestWelcomePage() {
+  const controller = useDigestWelcomePageController();
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Digest Welcome"
+        description="Configure /welcome global behavior and manage welcome pages (server-driven, i18n-ready)."
+      />
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {controller.updatedAtLabel ? (
+            <Badge variant="secondary">Updated {controller.updatedAtLabel}</Badge>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={controller.handleCreatePage}
+            disabled={controller.isCreatingPage}
+          >
+            New page
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-1">
+          <WelcomeConfigCard
+            viewModel={{
+              isLoading: controller.configQuery.isLoading,
+              isError: controller.configQuery.isError,
+              pages: controller.pages,
+              configDraft: controller.configDraft,
+              configActionLocale: controller.configActionLocale,
+              configActionNewLocale: controller.configActionNewLocale,
+              actionLocales: controller.actionLocales,
+              primaryActionLabel: controller.primaryActionLabel,
+              secondaryActionLabel: controller.secondaryActionLabel,
+              isSaving: controller.isSavingConfig,
+            }}
+            actions={{
+              setConfigDraft: controller.setConfigDraft,
+              onApplyActionLocale: controller.applyActionLocale,
+              onActionNewLocaleChange: controller.setConfigActionNewLocale,
+              onAddActionLocale: controller.handleAddActionLocale,
+              onReset: controller.handleResetConfig,
+              onSave: controller.handleSaveConfig,
+            }}
+          />
+
+          <WelcomePagesCard
+            viewModel={{
+              isLoading: controller.pagesQuery.isLoading,
+              isError: controller.pagesQuery.isError,
+              pages: controller.pages,
+              selectedPageId: controller.selectedPageId,
+              isReordering: controller.isReorderingPages,
+              isDeleting: controller.isDeletingPage,
+            }}
+            actions={{
+              onSelect: controller.setSelectedPageId,
+              onMove: controller.handleMovePage,
+              onDelete: controller.handleDeletePage,
+            }}
+          />
+        </div>
+
+        <div className="space-y-6 lg:col-span-2">
+          <WelcomePageEditorCard
+            viewModel={{
+              selectedPage: controller.selectedPage,
+              pageDraft: controller.pageDraft,
+              locales: controller.locales,
+              activeLocale: controller.activeLocale,
+              newLocale: controller.newLocale,
+              isSaving: controller.isSavingPage,
+            }}
+            actions={{
+              setPageDraft: controller.setPageDraft,
+              onApplyLocale: controller.applyLocale,
+              onNewLocaleChange: controller.setNewLocale,
+              onAddLocale: controller.handleAddLocale,
+              onReset: controller.handleResetPage,
+              onSave: controller.handleSavePage,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

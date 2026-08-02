@@ -1,0 +1,126 @@
+/**
+ * [PROPS]: LlmProvidersCardProps - providers list + callbacks
+ * [EMITS]: onNew/onEdit/onDelete - Providers 变更动作
+ * [POS]: Admin LLM 配置页的 Providers 区块（表格）
+ *
+ * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
+ */
+
+import { formatRelativeTime } from '@anyhunt/ui/lib';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@anyhunt/ui';
+import type { LlmProviderListItem } from '@/features/llm';
+import { LlmTableState } from './LlmTableState';
+
+export interface LlmProvidersCardProps {
+  isLoading: boolean;
+  errorMessage?: string | null;
+  isMutating: boolean;
+  providers: LlmProviderListItem[];
+  onNew: () => void;
+  onEdit: (provider: LlmProviderListItem) => void;
+  onDelete: (provider: LlmProviderListItem) => void;
+}
+
+export function LlmProvidersCard({
+  isLoading,
+  errorMessage,
+  isMutating,
+  providers,
+  onNew,
+  onEdit,
+  onDelete,
+}: LlmProvidersCardProps) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardTitle>Providers</CardTitle>
+        <Button onClick={onNew} disabled={isMutating}>
+          New provider
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <LlmTableState isLoading={isLoading} errorMessage={errorMessage}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Base URL</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Sort</TableHead>
+                <TableHead className="text-right">Updated</TableHead>
+                <TableHead className="text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {providers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    No providers yet.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {providers.map((p) => {
+                const updatedAt = p.updatedAt ? formatRelativeTime(new Date(p.updatedAt)) : '';
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell className="font-mono text-xs">{p.providerType}</TableCell>
+                    <TableCell className="max-w-[240px] truncate text-xs text-muted-foreground">
+                      {p.baseUrl ?? '(default)'}
+                    </TableCell>
+                    <TableCell>
+                      {p.enabled ? (
+                        <Badge variant="secondary">Enabled</Badge>
+                      ) : (
+                        <Badge variant="outline">Disabled</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs">{p.sortOrder}</TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {updatedAt}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onEdit(p)}
+                          disabled={isMutating}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => onDelete(p)}
+                          disabled={isMutating}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </LlmTableState>
+      </CardContent>
+    </Card>
+  );
+}
