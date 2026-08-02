@@ -10,7 +10,7 @@ Internal Playwright browser pool used by the Digest scraper.
 
 ## Boundaries
 
-- No public browser-session API, CDP gateway, agent port or playground.
+- The pool is internal and has no public session or remote-control API.
 - Callers depend on `BrowserPool`, not Playwright lifecycle details.
 - Pool size, idle timeout and page limits are environment configuration.
 - Browser failures must release resources and remain retryable by the scrape queue.

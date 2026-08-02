@@ -4,9 +4,13 @@ Private operations application for the Anyhunt Digest product.
 
 ## Responsibilities
 
-- Manage users, topics, sources, queues, logs, billing and redemption codes.
+- Manage users, topics, subscriptions, queues, logs, billing, and redemption codes.
 - Configure encrypted LLM providers, models and the default Digest model.
-- Inspect Digest operations without exposing internal acquisition as a product.
+- Inspect Digest operations and product health.
 
-All routes require an admin session. Shared UI comes from `@anyhunt/ui`; data access
-uses functional API clients and TanStack Query.
+## Contracts
+
+- All application routes require an admin session.
+- Server state uses TanStack Query through functional API modules under `src/features`.
+- Shared presentation primitives come from `@anyhunt/ui`.
+- User-facing text is English; operational terminology may follow server domain names.

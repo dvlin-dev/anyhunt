@@ -12,10 +12,11 @@ NestJS backend for the Anyhunt Digest product.
 
 ## Boundaries
 
-- Acquisition is internal; this service does not expose Fetchx, Memox, API-key
-  developer products, generic agents or browser sessions.
+- Search, site mapping, scraping, and browser automation are internal acquisition
+  services composed by the Digest domain.
 - PostgreSQL is the only application database. Redis backs BullMQ and caching.
-- Public product APIs use user sessions. Admin APIs require an admin session.
+- Authenticated product APIs use bearer access tokens. Admin APIs additionally require
+  an admin account.
 - Production schema changes use `prisma migrate deploy`; `db push` is development-only.
 - Secrets are environment variables and must never be returned by APIs or committed.
 - All controllers use API version `1`; user-facing errors are English.

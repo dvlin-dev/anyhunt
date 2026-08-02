@@ -1,4 +1,4 @@
-# Admin server module
+# Admin Server Module
 
 Session-authenticated operations APIs for dashboards, users, subscriptions,
 orders, credits, jobs, queues and scheduled tasks.
