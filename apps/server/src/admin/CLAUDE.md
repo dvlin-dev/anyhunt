@@ -1,11 +1,9 @@
-# Admin Server Module
+# Admin 服务端模块
 
-Session-authenticated operations APIs for dashboards, users, subscriptions,
-orders, credits, jobs, queues and scheduled tasks.
+为仪表盘、用户、订阅、订单、Credits、任务、队列与定时任务提供会话认证的运营 API。
 
-- Every controller uses API version `1` and requires `RequireAdmin`.
-- There are no public endpoints or separate admin credentials.
-- Queue monitoring covers the internal scrape queue and Digest scheduling,
-  execution, refresh and delivery queues.
-- Subscription tier calculations use active subscriptions only.
-- Operational time buckets use UTC.
+- 每个 Controller 都使用 API 版本 `1` 并要求 `RequireAdmin`。
+- 不提供公开端点或独立管理员凭据。
+- 队列监控覆盖内部抓取队列，以及 Digest 调度、执行、刷新与投递队列。
+- 订阅等级只根据有效订阅计算。
+- 运营时间分桶统一使用 UTC。

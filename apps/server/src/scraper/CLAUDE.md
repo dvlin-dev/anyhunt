@@ -1,22 +1,19 @@
 # Scraper
 
-Internal browser-based acquisition engine for turning a URL into structured content.
+将 URL 转换为结构化内容的内部浏览器采集引擎。
 
-## Responsibilities
+## 职责
 
-- Render pages through the shared Playwright pool.
-- Extract readable Markdown, HTML, links, metadata, screenshots, and PDFs.
-- Apply page configuration, wait strategies, and bounded browser actions.
-- Cache reusable results and execute asynchronous work through BullMQ.
+- 通过共享 Playwright 浏览器池渲染页面。
+- 提取可读 Markdown、HTML、链接、元数据、截图与 PDF。
+- 应用页面配置、等待策略与有界浏览器动作。
+- 缓存可复用结果，并通过 BullMQ 执行异步工作。
 
-## Constraints
+## 约束
 
-- Validate every target with the shared SSRF guard; the browser pool also blocks unsafe
-  subrequests.
-- Browser concurrency and page limits are configuration, and every failure path must
-  release pages and queue resources.
-- Bill before metered acquisition. Cache hits are free, and failed queued work refunds
-  the persisted quota breakdown idempotently.
-- `scrapeSync()` is the internal synchronous composition API for acquisition services.
-- Request headers are runtime-only and must not be persisted in job options.
-- Queue event connections used for synchronous waiting must close during shutdown.
+- 每个目标都必须通过共享 SSRF Guard；浏览器池也要阻止不安全子请求。
+- 浏览器并发与页面上限来自配置；每条失败路径都必须释放页面与队列资源。
+- 计费采集前先扣费；缓存命中免费，队列工作失败时根据持久化配额明细幂等退款。
+- `scrapeSync()` 是采集服务内部使用的同步组合 API。
+- 请求 Header 只在运行时使用，不得持久化到 Job Options。
+- 用于同步等待的 Queue Event 连接必须在服务关闭时释放。

@@ -1,23 +1,20 @@
 # Quota
 
-Usage accounting for daily free credits, subscription allowance, and purchased credits.
+每日免费 Credits、订阅额度与已购 Credits 的用量核算。
 
-## Responsibilities
+## 职责
 
-- Report available allowance and transaction history.
-- Deduct allowance before metered work and refund failed work.
-- Reset daily and monthly buckets on their defined UTC boundaries.
-- Add purchased credits only from a validated order.
+- 返回可用额度与交易历史。
+- 计费工作执行前扣减额度，工作失败时退款。
+- 在规定的 UTC 边界重置每日和每月额度。
+- 只允许根据已验证订单增加已购 Credits。
 
-## Constraints
+## 约束
 
-- Deduction order is daily, then monthly, then purchased credits.
-- Metered operations pre-deduct and refund on failure; cache hits do not consume quota.
-- Redis and Lua protect concurrent daily-credit updates; PostgreSQL is authoritative for
-  persisted quota transactions.
-- Every refund has a unique reference ID and is safe to retry.
-- Repository deduction can report no available transaction; callers must handle that
-  result without dereferencing it.
-- Tier amounts and reset rules live in `quota.constants.ts`, not in documentation.
-- Integration tests that touch daily credits must remove their Redis keys to avoid
-  cross-test state.
+- 扣减顺序为每日额度、每月额度、已购 Credits。
+- 计费操作预扣，失败时退款；缓存命中不消耗配额。
+- Redis 与 Lua 保护每日 Credits 并发更新；PostgreSQL 是持久化配额交易的权威事实源。
+- 每笔退款都有唯一 Reference ID，可安全重试。
+- Repository 扣减可能返回无可用交易；调用方不得直接解引用该结果。
+- Tier 数额与重置规则只记录在 `quota.constants.ts`，不写入文档。
+- 涉及每日 Credits 的集成测试必须清理 Redis Key，避免测试间状态污染。

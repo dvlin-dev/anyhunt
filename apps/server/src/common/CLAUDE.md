@@ -1,21 +1,19 @@
 # Common
 
-Shared, business-neutral server infrastructure.
+业务无关的服务端共享基础设施。
 
-## Responsibilities
+## 职责
 
-- Global Zod request validation and RFC 7807 problem responses.
-- User-aware rate limiting backed by Redis.
-- SSRF-safe URL validation and redirect-aware fetching.
-- Shared pagination, JSON, encryption, origin, HTTP, and subscription-tier utilities.
-- Webhook delivery and the terminal not-found controller.
+- 全局 Zod 请求校验与 RFC 7807 Problem 响应。
+- Redis 支撑的用户级限流。
+- 防 SSRF URL 校验与感知重定向的安全 Fetch。
+- 共享分页、JSON、加密、Origin、HTTP 与订阅等级工具。
+- Webhook 投递与终端 Not Found Controller。
 
-## Boundaries
+## 边界
 
-- Common code is stateless or infrastructure-scoped and must not own product policy.
-- It must not depend on a business module.
-- Every outbound user-supplied URL must pass DNS-aware validation. Redirects require
-  validation at every hop, and private, reserved, credentialed, or non-HTTP URLs fail
-  closed.
-- Shared error codes and problem details are public API contracts; change them
-  intentionally and test their serialization.
+- Common 代码必须无状态或只属于基础设施作用域，不得承载产品策略。
+- 不得依赖业务模块。
+- 所有用户提供的出站 URL 都必须通过 DNS 感知校验；每次重定向都要重新校验，私有、保留、
+  携带凭据或非 HTTP URL 必须失败关闭。
+- 共享错误码与 Problem Details 属于公开 API 合同；变更必须有明确意图并测试序列化结果。

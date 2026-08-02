@@ -1,20 +1,17 @@
 # Auth
 
-Better Auth owns account enrollment and identity verification. Anyhunt token services
-adapt successful sign-in into the bearer-token contract used by product APIs.
+Better Auth 负责账号注册与身份验证。Anyhunt Token 服务将成功登录适配为产品 API 使用的
+Bearer Token 合同。
 
-## Contracts
+## 合同
 
-- Auth routes are under `/api/v1/auth/*`.
-- Product APIs accept `Authorization: Bearer <accessToken>`.
-- Successful email/password or email-OTP sign-in returns an access and refresh token.
-- Refresh tokens come from the request body, rotate on refresh, and can be revoked
-  idempotently by logout or sign-out.
-- Access tokens derive `subscriptionTier` from active subscriptions only.
-- `RequireAdmin` checks the persisted admin flag; `ADMIN_EMAILS` seeds that flag.
-- Production config must define the canonical auth URL, trusted origins, secure cookie
-  behavior, and strong secrets.
+- Auth 路由位于 `/api/v1/auth/*`。
+- 产品 API 接受 `Authorization: Bearer <accessToken>`。
+- 邮箱密码或邮箱 OTP 登录成功后返回 Access Token 与 Refresh Token。
+- Refresh Token 从请求体读取，每次刷新时轮换，并可由 logout/sign-out 幂等撤销。
+- Access Token 中的 `subscriptionTier` 只根据有效订阅计算。
+- `RequireAdmin` 检查持久化管理员标记；`ADMIN_EMAILS` 用于初始化该标记。
+- 生产配置必须定义规范 Auth URL、可信 Origin、安全 Cookie 行为与强密钥。
 
-`auth.controller.ts` adapts Better Auth handlers, `auth.tokens.service.ts` owns token
-lifecycle, and the guards attach verified identity to requests. JWKS integration tests
-prove that issued access tokens are externally verifiable.
+`auth.controller.ts` 适配 Better Auth Handler，`auth.tokens.service.ts` 负责 Token 生命周期，
+Guard 将已验证身份附加到请求。JWKS 集成测试保证签发的 Access Token 可被外部验证。

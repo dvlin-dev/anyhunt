@@ -1,21 +1,17 @@
 # Digest
 
-Digest is the core product domain: subscriptions schedule acquisition runs, runs
-select and summarize material, editions preserve evidence, and delivery creates the
-reader inbox.
+Digest 是核心产品领域：订阅负责调度采集 Run，Run 筛选并总结内容，Edition 保留证据，
+投递形成阅读端收件箱。
 
-## Ownership
+## 职责
 
-- Topics, sources, subscriptions, runs, editions, items, inbox state, feedback, reports,
-  welcome content, and delivery.
-- Authenticated reader APIs, public topic and edition APIs, and Digest-specific admin
-  APIs, all under API version `1`.
-- Scheduling and execution queues for source refresh, subscription runs, email, and
-  webhooks.
+- Topic、Source、Subscription、Run、Edition、Item、收件箱状态、反馈、举报、欢迎内容与投递。
+- 已认证阅读端 API、公开 Topic/Edition API 与 Digest 专属 Admin API，统一使用 API 版本 `1`。
+- Source 刷新、Subscription Run、邮件与 Webhook 的调度和执行队列。
 
-## Contracts
+## 合同
 
-- List APIs use `page` and `limit` and return:
+- 列表 API 使用 `page` 与 `limit`，返回：
 
 ```ts
 type PaginatedResponse<T> = {
@@ -27,13 +23,11 @@ type PaginatedResponse<T> = {
 };
 ```
 
-- Scheduler jobs and run jobs must be idempotent; Redis locks prevent duplicate
-  scheduling, while persisted run state is authoritative.
-- Canonical URLs and content fingerprints drive deduplication before ranking.
-- RSS, crawl, and webhook URLs use the shared SSRF guard, including redirects.
-- Invalid webhook destinations are unrecoverable; transient delivery failures remain
-  retryable.
-- Subscription limits derive from active subscriptions only.
-- All LLM calls resolve the admin-configured Digest model through `src/llm`; never
-  hard-code provider credentials or model IDs in this domain.
-- `ANYHUNT_WWW_URL` is the canonical base for reader and unsubscribe links.
+- Scheduler Job 与 Run Job 必须幂等；Redis 锁避免重复调度，持久化 Run 状态是权威事实。
+- 排序前通过规范 URL 与内容指纹去重。
+- RSS、爬取与 Webhook URL 统一使用共享 SSRF Guard，包括每次重定向。
+- 无效 Webhook 目标不可恢复；临时投递失败允许重试。
+- 订阅限制只根据有效订阅计算。
+- 所有 LLM 调用都通过 `src/llm` 解析 Admin 配置的 Digest 模型；本领域禁止硬编码
+  Provider 凭据或模型 ID。
+- `ANYHUNT_WWW_URL` 是阅读链接与退订链接的规范 Base URL。

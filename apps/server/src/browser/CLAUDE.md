@@ -1,16 +1,16 @@
 # Browser
 
-Internal Playwright browser pool used by the Digest scraper.
+供 Digest 抓取器使用的内部 Playwright 浏览器池。
 
-## Responsibilities
+## 职责
 
-- Own a bounded pool of Chromium processes and pages.
-- Apply launch, locale and stealth defaults needed for reliable collection.
-- Recycle unhealthy or overused browser processes.
+- 管理有界的 Chromium 进程与页面池。
+- 应用可靠采集所需的启动、Locale 与 Stealth 默认配置。
+- 回收不健康或使用次数过多的浏览器进程。
 
-## Boundaries
+## 边界
 
-- The pool is internal and has no public session or remote-control API.
-- Callers depend on `BrowserPool`, not Playwright lifecycle details.
-- Pool size, idle timeout and page limits are environment configuration.
-- Browser failures must release resources and remain retryable by the scrape queue.
+- 浏览器池只供内部使用，不提供公开会话或远程控制 API。
+- 调用方依赖 `BrowserPool`，不依赖 Playwright 生命周期细节。
+- 池大小、空闲超时与页面上限由环境配置决定。
+- 浏览器失败必须释放资源，并允许抓取队列重试。

@@ -1,71 +1,78 @@
-# Anyhunt Product Purpose
+# Anyhunt 产品目的
 
-## Why Anyhunt exists
+## 为什么需要 Anyhunt
 
-People care about topics that evolve continuously, but useful information is scattered across websites, feeds, newsletters, and search results. Keeping up requires repeated searching, filtering, and reading, while most collected material is redundant or low value.
+人们关心的主题持续变化，但有价值的信息分散在网站、Feed、Newsletter 和搜索结果中。
+持续跟进需要反复搜索、筛选与阅读，而收集到的大部分内容重复或价值有限。
 
-Anyhunt exists to turn a topic into a dependable stream of useful understanding.
+Anyhunt 的存在，是为了把一个主题转化为持续、可靠且有价值的认知流。
 
-## Product promise
+## 产品承诺
 
-The user states what they want to keep up with. Anyhunt continuously discovers relevant sources, collects new material, removes repetition, ranks what matters, and delivers a concise recurring digest with links to the original evidence.
+用户只需说明希望持续关注什么。Anyhunt 会不断发现相关信息源、收集新内容、去除重复、
+筛选重要信息，并定期交付附有原始证据链接的精炼摘要。
 
-The product should help users understand what changed and why it matters without requiring them to monitor every source themselves.
+产品应帮助用户理解发生了什么变化以及为什么重要，而无需亲自监控每一个信息源。
 
-## Core loop
+## 核心闭环
 
 ```text
-Topic
-  -> discover and collect sources
-  -> normalize and deduplicate new material
-  -> rank for relevance, quality, and freshness
-  -> compose a focused digest
-  -> deliver to the reader inbox
-  -> learn from user feedback and refine the next edition
+主题
+  -> 发现并采集信息源
+  -> 标准化新内容并去重
+  -> 按相关性、质量与时效性排序
+  -> 生成聚焦摘要
+  -> 投递到阅读端收件箱
+  -> 从用户反馈中学习并改进下一期
 ```
 
-Every major product capability must strengthen this loop. A capability that cannot be explained as part of this loop should not become a top-level Anyhunt product.
+每项重要产品能力都必须强化这一闭环。无法作为闭环一部分解释的能力，不应成为 Anyhunt
+的顶层产品能力。
 
-## User experience principles
+## 用户体验原则
 
-1. **Signal over volume.** Fewer useful items are better than a comprehensive stream of noise.
-2. **Conclusions first, evidence always available.** Each edition starts with a readable brief and preserves direct links to its sources.
-3. **Recurring by default.** Anyhunt is for staying informed over time, not merely answering a one-off search query.
-4. **Simple without being opaque.** A topic should be enough to start; scheduling, sources, and filtering remain understandable and controllable.
-5. **Respect attention.** Digests should be predictable, non-repetitive, and easy to pause, refine, or leave.
-6. **Data minimization.** Persist only what the product needs to operate, explain results, and improve future editions.
+1. **信号优先于数量。** 少而有用的内容，胜过全面但嘈杂的信息流。
+2. **结论在前，证据随时可查。** 每期先给出可读摘要，同时保留直达原始信息源的链接。
+3. **默认持续跟进。** Anyhunt 用于长期保持了解，不只是回答一次性搜索问题。
+4. **简单但不黑盒。** 一个主题即可开始；调度、信息源和筛选逻辑仍应可理解、可控制。
+5. **尊重注意力。** 摘要应可预测、不重复，并且易于暂停、调整或退出。
+6. **数据最小化。** 只持久化产品运行、解释结果和改进后续内容所必需的数据。
 
-## Product surfaces
+## 产品界面
 
-- **Reader:** create and manage topic subscriptions, explore public topics, read editions, and provide feedback.
-- **Digest service:** schedule collection, acquire material, deduplicate, rank, summarize, compose, and deliver editions.
-- **Admin:** operate topics, reports, queues, model configuration, billing, and product health.
+- **阅读端：** 创建和管理主题订阅、探索公开主题、阅读每期内容并提供反馈。
+- **Digest 服务：** 调度采集、获取内容、去重、排序、总结、编排并投递每期内容。
+- **管理端：** 运营主题、举报、队列、模型配置、计费与产品健康状态。
 
-Search, scraping, feed parsing, crawling, and browser automation are internal acquisition mechanisms. They do not define separate product lines.
+搜索、抓取、Feed 解析、爬取与浏览器自动化都是内部采集机制，不构成独立产品线。
 
-## Product boundaries
+## 产品边界
 
-Anyhunt is not a general-purpose developer platform, personal knowledge store, generic agent runtime, workflow builder, or shared backend for another product.
+Anyhunt 不是通用开发者平台、个人知识存储、通用 Agent Runtime、工作流构建器，也不是
+其他产品的共享后端。
 
-Anyhunt owns its accounts, tokens, billing, data, and deployments. External products may integrate through an explicit HTTP contract, but they do not import Anyhunt workspace packages or share its persistence layer.
+Anyhunt 独立拥有账号、Token、计费、数据与部署。外部产品只能通过显式 HTTP 合同集成，
+不得导入 Anyhunt workspace 包或共享其持久化层。
 
-## Success criteria
+## 成功标准
 
-Anyhunt succeeds when a user can:
+当用户能够做到以下事情时，Anyhunt 才算成功：
 
-1. create a useful recurring subscription from a topic with minimal setup;
-2. receive editions on a predictable schedule;
-3. quickly understand the important changes before opening source links;
-4. avoid repeatedly seeing the same material;
-5. control sources, cadence, relevance, and subscription state;
-6. trust that summaries are grounded in identifiable original sources.
+1. 用最少配置从一个主题创建有价值的持续订阅；
+2. 按可预测的节奏收到每期内容；
+3. 打开原始链接前快速理解重要变化；
+4. 不会反复看到相同内容；
+5. 能控制信息源、频率、相关性和订阅状态；
+6. 能确认摘要建立在可识别的原始信息源之上。
 
-Product health is measured by sustained useful subscriptions, edition readership, saves and positive feedback, low repetition, reliable delivery, and low unsubscribe or mute rates caused by noise.
+产品健康度通过持续有效的订阅、每期阅读、收藏与正向反馈、低重复率、可靠投递，以及较低的
+噪声退订或静音率衡量。
 
-## Evolution guardrails
+## 演进约束
 
-1. Prefer improving the core loop over adding another product surface.
-2. Keep acquisition capabilities internal unless a future business decision explicitly establishes a separate product.
-3. Add a new domain model only when the existing Topic, Source, Subscription, Run, Edition, Item, and Feedback concepts cannot express the requirement cleanly.
-4. Keep default workflows short; advanced controls should not burden first use.
-5. Treat this document as the product-purpose fact source. Implementation details belong in nearby code contracts, not in a second product strategy document.
+1. 优先改进核心闭环，而不是增加新的产品界面。
+2. 除非未来业务决策明确建立独立产品，否则采集能力保持内部化。
+3. 只有现有 Topic、Source、Subscription、Run、Edition、Item 和 Feedback 概念无法清晰
+   表达需求时，才新增领域模型。
+4. 默认流程保持简短，高级控制不得增加首次使用负担。
+5. 本文档是产品目的事实源；实现细节写入相邻代码合同，不再建立第二份产品策略文档。

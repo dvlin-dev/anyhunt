@@ -1,17 +1,17 @@
 # LLM
 
-Dynamic provider and model configuration for Digest generation.
+Digest 生成使用的动态 Provider 与模型配置。
 
-## Responsibilities
+## 职责
 
-- Admin CRUD for providers, models and the default Digest model.
-- Encrypt provider credentials at rest with AES-256-GCM.
-- Resolve an enabled provider/model and construct an AI SDK language model.
+- 为 Provider、模型与默认 Digest 模型提供 Admin CRUD。
+- 使用 AES-256-GCM 加密静态存储的 Provider 凭据。
+- 解析已启用的 Provider/模型并构造 AI SDK Language Model。
 
-## Boundaries
+## 边界
 
-- The only runtime purpose is `digest`.
-- Provider credentials are never returned in API responses.
-- `ANYHUNT_LLM_SECRET_KEY` is a base64-encoded 32-byte key.
-- Supported providers are OpenAI, OpenAI-compatible, OpenRouter, Anthropic and Google.
-- No generic Agent SDK adapter, extraction model or per-user model policy.
+- 唯一运行目的为 `digest`。
+- API 响应不得返回 Provider 凭据。
+- `ANYHUNT_LLM_SECRET_KEY` 是 Base64 编码的 32 字节密钥。
+- 支持 OpenAI、OpenAI-compatible、OpenRouter、Anthropic 与 Google。
+- 不提供通用 Agent SDK Adapter、独立抽取模型或用户级模型策略。

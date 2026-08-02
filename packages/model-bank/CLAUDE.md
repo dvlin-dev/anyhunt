@@ -1,7 +1,5 @@
 # Model Bank
 
-Provider-neutral model metadata and reasoning configuration used by Anyhunt LLM
-administration and runtime model construction.
+Anyhunt LLM 管理与运行时模型构造使用的 Provider 中立模型元数据和推理配置。
 
-This package contains no credentials or application state. Provider credentials and
-runtime model construction remain server-owned.
+本包不包含凭据或应用状态。Provider 凭据与运行时模型构造继续由 Server 负责。
