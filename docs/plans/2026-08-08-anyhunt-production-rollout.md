@@ -14,15 +14,15 @@
 
 ## 实施阶段
 
-| 阶段 | 工作                                  | 状态   | 验证证据                                                             |
-| ---- | ------------------------------------- | ------ | -------------------------------------------------------------------- |
-| 1    | 审计旧环境的服务、端口、域名与变量键  | 完成   | 已确认 3200/3202/3203；旧 Console 3201、Docs 3204 不迁移；密钥未输出 |
-| 2    | 建立生产 Compose 与运维事实源         | 完成   | 配置解析、镜像构建、空卷迁移、Provider Seed 与健康检查通过           |
-| 3    | 提交并推送 `main`                     | 完成   | `694f193` 已推送，待 GitHub CI 完成                                  |
-| 4    | 在新 Dokploy 环境创建并配置 Compose   | 进行中 | Source、密钥环境和临时 3300/3302/3303 预演端口已配置                 |
-| 5    | 停止旧 Anyhunt 服务并切换正式端口     | 未开始 | 待记录切换与回滚锚点                                                 |
-| 6    | 生产真实页面、Provider 与核心流程验收 | 未开始 | 待记录脱敏场景、模型、端点类型和结果                                 |
-| 7    | 删除旧 Anyhunt 服务并完成最终复核     | 未开始 | 待确认只删除五个 Anyhunt 服务，Moryflow 310x 保留                    |
+| 阶段 | 工作                                  | 状态 | 验证证据                                                             |
+| ---- | ------------------------------------- | ---- | -------------------------------------------------------------------- |
+| 1    | 审计旧环境的服务、端口、域名与变量键  | 完成 | 已确认 3200/3202/3203；旧 Console 3201、Docs 3204 不迁移；密钥未输出 |
+| 2    | 建立生产 Compose 与运维事实源         | 完成 | 配置解析、镜像构建、空卷迁移、Provider Seed 与健康检查通过           |
+| 3    | 提交并推送 `main`                     | 完成 | `694f193`、`fe32e80` 已推送，GitHub CI 均通过                        |
+| 4    | 在新 Dokploy 环境创建并配置 Compose   | 完成 | `main`、生产 Compose、受保护环境变量和 On Push 自动部署已生效        |
+| 5    | 停止旧 Anyhunt 服务并切换正式端口     | 完成 | 临时 330x 预演后切换到 3200/3202/3203，三个公网入口正常              |
+| 6    | 生产真实页面、Provider 与核心流程验收 | 完成 | 真实研究、Tool、Evidence、Inbox、Skill、取消与 Admin 诊断通过        |
+| 7    | 删除旧 Anyhunt 服务并完成最终复核     | 完成 | 旧五个 Anyhunt 服务已删除；Moryflow 3100–3103 保持不变               |
 
 ## 旧部署审计基线
 
@@ -44,14 +44,15 @@
 - [x] PostgreSQL/Redis 使用命名卷，数据库和内部采集服务无公网端口；
 - [x] Server/Web/Admin 镜像构建通过且以非 root 运行；
 - [x] migration 与 Provider Seed 从空库成功执行；
-- [ ] 三个公网域名返回预期页面/健康状态；
-- [ ] 真实账号完成登录或注册验证；
-- [ ] 真实 Provider 完成 Topic → Tool → Evidence → RunItem → Skill；
-- [ ] Stop/恢复和至少一种投递路径通过；
-- [ ] 页面、Console、服务日志无未解决阻断错误；
+- [x] 三个公网域名返回预期页面/健康状态；
+- [x] 真实账号完成注册、验证与登录验收；
+- [x] 真实 Provider 完成 Topic → Tool → Evidence → RunItem → Skill；
+- [x] 生产 Stop 与 Inbox 投递通过；检查点恢复已由生产镜像 E2E 覆盖；
+- [x] 页面、Console、请求日志和服务日志无未解决阻断错误；
 - [ ] 邮件传输已配置，注册 OTP、密码重置与 Email Delivery 可用；
-- [ ] 旧 Anyhunt 五个服务删除，Moryflow 服务未变更；
-- [ ] 生产备份、回滚步骤和未完成风险已记录。
+- [x] 旧 Anyhunt 五个服务删除，Moryflow 服务未变更；
+- [x] 回滚步骤和未完成风险已记录；
+- [ ] Dokploy 已配置远程 S3 Destination，并为生产卷建立定时备份。
 
 ## 验证记录
 
@@ -65,5 +66,29 @@
 - 新 Dokploy Compose 已绑定 `dvlin-dev/anyhunt` 的 `main` 与 `compose.production.yml`，On Push 已启用；
   密钥环境已通过受保护编辑器写入，未进入 Git、文档或截图。
 
-生产公网与真实页面验证尚未开始。任何密钥、完整端点、Authorization Header、Prompt、Skill 正文和
-采集正文都不得写入本计划。
+生产切换与真实页面验收结果：
+
+- `anyhunt.app`、`server.anyhunt.app`、`admin.anyhunt.app` 已分别落到 3200、3202、3203；
+  Server readiness 确认 PostgreSQL、Redis、Queue 均可用；
+- 真实账号在公开 Web 完成注册、运营验证与登录，创建 Topic 并发起两次手动 Run；验收结束后账号及其
+  Topic、Run、Skill、Subscription 已清除，生产库对应记录回到 0；
+- 真实 Provider 使用模型 `gpt-5.6-terra`，端点类型为 OpenAI-compatible proxy；成功 Run 耗时
+  27.7 秒，完成 5 个 Turn 和 4 次 Tool Call（Search、Fetch、提交结果、保存 Skill），生成 1 条
+  有官方证据的 Inbox 结果和 1 个健康 Managed Skill；
+- 第二次 Run 在页面停止后持久化为 `CANCELED`；服务日志中的执行耗时为 9.6 秒，取消中的 Fetch
+  以 `ABORTED` 正常结束；
+- Admin 能核对相同的 Run、模型、Tool、Token、Skill 与队列状态；四类队列等待、活动和失败数均为
+  0，管理端 500 请求筛选无记录；Web/Admin 浏览器 Console 与页面错误均为空；
+- 全部六个常驻容器健康，Migrate 和 Provider Seed 退出码为 0；日志没有崩溃、异常重启或未解决错误；
+- 旧环境的 `anyhunt-www-3200`、`anyhunt-console-3201`、`anyhunt-server-3202`、
+  `anyhunt-admin-3203`、`anyhunt-docs-3204` 已删除；Moryflow 的四个 310x 服务未改动。
+
+## 当前公开上线门禁
+
+核心研究闭环和独立生产栈已经可用，但尚不应开放公共注册：
+
+1. Dokploy 尚未配置 `RESEND_API_KEY` 或 `SMTP_URL`，因此注册 OTP、密码重置和 Email Delivery
+   不能作为生产能力承诺；本次账号验证仅用于受控部署验收，没有在代码中加入绕过逻辑。
+2. Dokploy 当前没有可用的 S3 Destination，`postgres-data` 与 `redis-data` 尚未建立远程定时备份。
+
+任何密钥、Authorization Header、完整 Prompt、Skill 正文和采集正文都不得写入本计划。
