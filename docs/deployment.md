@@ -33,19 +33,22 @@ SearXNG 配置在专用镜像构建时写入，避免自动部署依赖宿主机
 Dokploy Compose 的 Environment 必须配置下列变量。值只能保存在部署平台密钥区，不得写入 Git、
 日志、截图或测试快照。
 
-| 变量                          | 必需   | 用途                                           |
-| ----------------------------- | ------ | ---------------------------------------------- |
-| `POSTGRES_PASSWORD`           | 是     | 独立生产数据库密码，使用 URL 安全随机值        |
-| `BETTER_AUTH_SECRET`          | 是     | Better Auth 会话签名密钥，至少 32 字符         |
-| `ANYHUNT_LLM_SECRET_KEY`      | 是     | 加密数据库内的 Provider Key，Base64 32 字节    |
-| `ANYHUNT_DATA_SECRET_KEY`     | 是     | 加密 Webhook Secret 与签名数据，Base64 32 字节 |
-| `SEARXNG_SECRET`              | 是     | SearXNG 内部密钥                               |
-| `OPENAI_API_KEY`              | 是     | 仅注入一次性 Provider Seed                     |
-| `OPENAI_BASE_URL`             | 是     | 仅注入一次性 Provider Seed                     |
-| `OPENAI_MODEL`                | 是     | 仅注入一次性 Provider Seed                     |
-| `ADMIN_EMAILS`                | 建议   | 逗号分隔的管理员邮箱                           |
-| `EMAIL_FROM`                  | 是     | 发件人，例如 `Anyhunt <noreply@anyhunt.app>`   |
-| `RESEND_API_KEY` / `SMTP_URL` | 二选一 | 注册 OTP、密码重置和 Email Delivery            |
+| 变量                          | 必需   | 用途                                            |
+| ----------------------------- | ------ | ----------------------------------------------- |
+| `POSTGRES_PASSWORD`           | 是     | 独立生产数据库密码，使用 URL 安全随机值         |
+| `BETTER_AUTH_SECRET`          | 是     | Better Auth 会话签名密钥，至少 32 字符          |
+| `ANYHUNT_LLM_SECRET_KEY`      | 是     | 加密数据库内的 Provider Key，Base64 32 字节     |
+| `ANYHUNT_DATA_SECRET_KEY`     | 是     | 加密 Webhook Secret 与签名数据，Base64 32 字节  |
+| `SEARXNG_SECRET`              | 是     | SearXNG 内部密钥                                |
+| `OPENAI_API_KEY`              | 是     | 仅注入一次性 Provider Seed                      |
+| `OPENAI_BASE_URL`             | 是     | 仅注入一次性 Provider Seed                      |
+| `OPENAI_MODEL`                | 是     | 仅注入一次性 Provider Seed                      |
+| `ADMIN_EMAILS`                | 建议   | 逗号分隔的管理员邮箱                            |
+| `EMAIL_FROM`                  | 是     | 发件人，例如 `Anyhunt <noreply@anyhunt.app>`    |
+| `RESEND_API_KEY` / `SMTP_URL` | 二选一 | 注册 OTP、密码重置和 Email Delivery             |
+| `ANYHUNT_WEB_PORT`            | 否     | Web HOST 端口，默认 `3200`；仅切换预演时覆盖    |
+| `ANYHUNT_SERVER_PORT`         | 否     | Server HOST 端口，默认 `3202`；仅切换预演时覆盖 |
+| `ANYHUNT_ADMIN_PORT`          | 否     | Admin HOST 端口，默认 `3203`；仅切换预演时覆盖  |
 
 `OPENAI_*` 不注入 Server、Web 或 Admin 常驻进程。Provider Seed 会使用
 `ANYHUNT_LLM_SECRET_KEY` 加密凭据后写入数据库；Web/Admin 永远不接收 Provider Key。
@@ -69,9 +72,10 @@ Dokploy Compose 的 Environment 必须配置下列变量。值只能保存在部
 
 同一 HOST 端口不能由新旧服务同时占用。切换顺序固定为：
 
-1. 先完成新 Compose 的 Source、Environment 和构建配置，但不占用正式端口；
+1. 首次部署可临时设置 `ANYHUNT_WEB_PORT=3300`、`ANYHUNT_SERVER_PORT=3302`、
+   `ANYHUNT_ADMIN_PORT=3303`，先完成镜像构建、迁移、Seed 和容器内健康检查；
 2. 记录旧 Anyhunt 应用 ID、端口和运行状态，停止旧 Anyhunt Web/Server/Admin；
-3. 部署新 Compose，确认数据库迁移和 Provider Seed 成功；
+3. 删除三个临时端口变量或改为 3200/3202/3203，重新部署并切换正式端口；
 4. 验证三个公网入口、健康检查、登录、Topic 研究、Tool Call、Skill、停止/恢复与投递；
 5. 新环境全部通过后，删除旧 Anyhunt Web/Console/Server/Admin/Docs；
 6. 若切换失败，先停止新 Compose，再重新启动旧 Web/Server/Admin，避免双重端口占用。

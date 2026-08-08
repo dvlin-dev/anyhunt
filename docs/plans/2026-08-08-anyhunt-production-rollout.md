@@ -17,9 +17,9 @@
 | 阶段 | 工作                                  | 状态   | 验证证据                                                             |
 | ---- | ------------------------------------- | ------ | -------------------------------------------------------------------- |
 | 1    | 审计旧环境的服务、端口、域名与变量键  | 完成   | 已确认 3200/3202/3203；旧 Console 3201、Docs 3204 不迁移；密钥未输出 |
-| 2    | 建立生产 Compose 与运维事实源         | 完成   | 配置解析、镜像构建、空卷迁移、Provider Seed 与健康检查通过            |
-| 3    | 提交并推送 `main`                     | 未开始 | 待记录 commit 与 CI 结果                                             |
-| 4    | 在新 Dokploy 环境创建并配置 Compose   | 未开始 | 待记录 Source、Environment 与构建结果                                |
+| 2    | 建立生产 Compose 与运维事实源         | 完成   | 配置解析、镜像构建、空卷迁移、Provider Seed 与健康检查通过           |
+| 3    | 提交并推送 `main`                     | 完成   | `694f193` 已推送，待 GitHub CI 完成                                  |
+| 4    | 在新 Dokploy 环境创建并配置 Compose   | 进行中 | Source、密钥环境和临时 3300/3302/3303 预演端口已配置                 |
 | 5    | 停止旧 Anyhunt 服务并切换正式端口     | 未开始 | 待记录切换与回滚锚点                                                 |
 | 6    | 生产真实页面、Provider 与核心流程验收 | 未开始 | 待记录脱敏场景、模型、端点类型和结果                                 |
 | 7    | 删除旧 Anyhunt 服务并完成最终复核     | 未开始 | 待确认只删除五个 Anyhunt 服务，Moryflow 310x 保留                    |
@@ -62,6 +62,8 @@
 - Web 3200、Server 3202 `/health/ready`、Admin 3203 `/health` 均返回 200；
 - SearXNG JSON 搜索返回 200；Server/Web/Admin 运行用户分别为 `anyhunt`、`node`、`101`；
 - 发现部署平台会把未配置的 `SMTP_URL` 注入为空字符串，已在配置边界统一归一为空值并增加回归测试。
+- 新 Dokploy Compose 已绑定 `dvlin-dev/anyhunt` 的 `main` 与 `compose.production.yml`，On Push 已启用；
+  密钥环境已通过受保护编辑器写入，未进入 Git、文档或截图。
 
 生产公网与真实页面验证尚未开始。任何密钥、完整端点、Authorization Header、Prompt、Skill 正文和
 采集正文都不得写入本计划。
