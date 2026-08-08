@@ -10,23 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
-import { Route as WelcomeRouteImport } from './routes/welcome'
-import { Route as InboxIndexRouteImport } from './routes/inbox/index'
-import { Route as TopicsIndexRouteImport } from './routes/topics/index'
-import { Route as InboxItemsItemIdRouteImport } from './routes/inbox/items/$itemId'
-import { Route as TopicSlugIndexRouteImport } from './routes/topic/$slug/index'
-import { Route as TopicsSlugIndexRouteImport } from './routes/topics/$slug/index'
-import { Route as TopicSlugEditionsEditionIdRouteImport } from './routes/topic/$slug/editions/$editionId'
-import { Route as TopicsSlugEditionsEditionIdRouteImport } from './routes/topics/$slug/editions/$editionId'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppInboxRouteImport } from './routes/app.inbox'
+import { Route as AppSkillsRouteImport } from './routes/app.skills'
+import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
+import { Route as TopicsSlugRouteImport } from './routes/topics.$slug'
+import { Route as AppSkillsSkillIdRouteImport } from './routes/app.skills.$skillId'
+import { Route as AppTopicsTopicIdRouteImport } from './routes/app.topics.$topicId'
+import { Route as AppTopicsNewRouteImport } from './routes/app.topics.new'
+import { Route as TopicsSlugRunsRunIdRouteImport } from './routes/topics.$slug_.runs.$runId'
+import { Route as AppTopicsTopicIdRunsRunIdRouteImport } from './routes/app.topics.$topicId_.runs.$runId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -49,69 +56,75 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SubscriptionsRoute = SubscriptionsRouteImport.update({
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInboxRoute = AppInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSkillsRoute = AppSkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubscriptionsRoute = AppSubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
+  getParentRoute: () => AppRoute,
+} as any)
+const TopicsSlugRoute = TopicsSlugRouteImport.update({
+  id: '/topics/$slug',
+  path: '/topics/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WelcomeRoute = WelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
+const AppSkillsSkillIdRoute = AppSkillsSkillIdRouteImport.update({
+  id: '/$skillId',
+  path: '/$skillId',
+  getParentRoute: () => AppSkillsRoute,
+} as any)
+const AppTopicsTopicIdRoute = AppTopicsTopicIdRouteImport.update({
+  id: '/topics/$topicId',
+  path: '/topics/$topicId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTopicsNewRoute = AppTopicsNewRouteImport.update({
+  id: '/topics/new',
+  path: '/topics/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const TopicsSlugRunsRunIdRoute = TopicsSlugRunsRunIdRouteImport.update({
+  id: '/topics/$slug_/runs/$runId',
+  path: '/topics/$slug/runs/$runId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InboxIndexRoute = InboxIndexRouteImport.update({
-  id: '/inbox/',
-  path: '/inbox/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TopicsIndexRoute = TopicsIndexRouteImport.update({
-  id: '/topics/',
-  path: '/topics/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InboxItemsItemIdRoute = InboxItemsItemIdRouteImport.update({
-  id: '/inbox/items/$itemId',
-  path: '/inbox/items/$itemId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TopicSlugIndexRoute = TopicSlugIndexRouteImport.update({
-  id: '/topic/$slug/',
-  path: '/topic/$slug/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TopicsSlugIndexRoute = TopicsSlugIndexRouteImport.update({
-  id: '/topics/$slug/',
-  path: '/topics/$slug/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TopicSlugEditionsEditionIdRoute =
-  TopicSlugEditionsEditionIdRouteImport.update({
-    id: '/topic/$slug/editions/$editionId',
-    path: '/topic/$slug/editions/$editionId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const TopicsSlugEditionsEditionIdRoute =
-  TopicsSlugEditionsEditionIdRouteImport.update({
-    id: '/topics/$slug/editions/$editionId',
-    path: '/topics/$slug/editions/$editionId',
-    getParentRoute: () => rootRouteImport,
+const AppTopicsTopicIdRunsRunIdRoute =
+  AppTopicsTopicIdRunsRunIdRouteImport.update({
+    id: '/topics/$topicId_/runs/$runId',
+    path: '/topics/$topicId/runs/$runId',
+    getParentRoute: () => AppRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/explore': typeof ExploreRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/subscriptions': typeof SubscriptionsRoute
-  '/welcome': typeof WelcomeRoute
-  '/inbox/': typeof InboxIndexRoute
-  '/topics/': typeof TopicsIndexRoute
-  '/inbox/items/$itemId': typeof InboxItemsItemIdRoute
-  '/topic/$slug/': typeof TopicSlugIndexRoute
-  '/topics/$slug/': typeof TopicsSlugIndexRoute
-  '/topic/$slug/editions/$editionId': typeof TopicSlugEditionsEditionIdRoute
-  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
+  '/app/inbox': typeof AppInboxRoute
+  '/app/skills': typeof AppSkillsRouteWithChildren
+  '/app/subscriptions': typeof AppSubscriptionsRoute
+  '/topics/$slug': typeof TopicsSlugRoute
+  '/app/': typeof AppIndexRoute
+  '/app/skills/$skillId': typeof AppSkillsSkillIdRoute
+  '/app/topics/$topicId': typeof AppTopicsTopicIdRoute
+  '/app/topics/new': typeof AppTopicsNewRoute
+  '/topics/$slug/runs/$runId': typeof TopicsSlugRunsRunIdRoute
+  '/app/topics/$topicId/runs/$runId': typeof AppTopicsTopicIdRunsRunIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -119,50 +132,55 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/subscriptions': typeof SubscriptionsRoute
-  '/welcome': typeof WelcomeRoute
-  '/inbox': typeof InboxIndexRoute
-  '/topics': typeof TopicsIndexRoute
-  '/inbox/items/$itemId': typeof InboxItemsItemIdRoute
-  '/topic/$slug': typeof TopicSlugIndexRoute
-  '/topics/$slug': typeof TopicsSlugIndexRoute
-  '/topic/$slug/editions/$editionId': typeof TopicSlugEditionsEditionIdRoute
-  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
+  '/app/inbox': typeof AppInboxRoute
+  '/app/skills': typeof AppSkillsRouteWithChildren
+  '/app/subscriptions': typeof AppSubscriptionsRoute
+  '/topics/$slug': typeof TopicsSlugRoute
+  '/app': typeof AppIndexRoute
+  '/app/skills/$skillId': typeof AppSkillsSkillIdRoute
+  '/app/topics/$topicId': typeof AppTopicsTopicIdRoute
+  '/app/topics/new': typeof AppTopicsNewRoute
+  '/topics/$slug/runs/$runId': typeof TopicsSlugRunsRunIdRoute
+  '/app/topics/$topicId/runs/$runId': typeof AppTopicsTopicIdRunsRunIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/explore': typeof ExploreRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/subscriptions': typeof SubscriptionsRoute
-  '/welcome': typeof WelcomeRoute
-  '/inbox/': typeof InboxIndexRoute
-  '/topics/': typeof TopicsIndexRoute
-  '/inbox/items/$itemId': typeof InboxItemsItemIdRoute
-  '/topic/$slug/': typeof TopicSlugIndexRoute
-  '/topics/$slug/': typeof TopicsSlugIndexRoute
-  '/topic/$slug/editions/$editionId': typeof TopicSlugEditionsEditionIdRoute
-  '/topics/$slug/editions/$editionId': typeof TopicsSlugEditionsEditionIdRoute
+  '/app/inbox': typeof AppInboxRoute
+  '/app/skills': typeof AppSkillsRouteWithChildren
+  '/app/subscriptions': typeof AppSubscriptionsRoute
+  '/topics/$slug': typeof TopicsSlugRoute
+  '/app/': typeof AppIndexRoute
+  '/app/skills/$skillId': typeof AppSkillsSkillIdRoute
+  '/app/topics/$topicId': typeof AppTopicsTopicIdRoute
+  '/app/topics/new': typeof AppTopicsNewRoute
+  '/topics/$slug_/runs/$runId': typeof TopicsSlugRunsRunIdRoute
+  '/app/topics/$topicId_/runs/$runId': typeof AppTopicsTopicIdRunsRunIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/explore'
     | '/forgot-password'
     | '/login'
     | '/register'
-    | '/subscriptions'
-    | '/welcome'
-    | '/inbox/'
-    | '/topics/'
-    | '/inbox/items/$itemId'
-    | '/topic/$slug/'
-    | '/topics/$slug/'
-    | '/topic/$slug/editions/$editionId'
-    | '/topics/$slug/editions/$editionId'
+    | '/app/inbox'
+    | '/app/skills'
+    | '/app/subscriptions'
+    | '/topics/$slug'
+    | '/app/'
+    | '/app/skills/$skillId'
+    | '/app/topics/$topicId'
+    | '/app/topics/new'
+    | '/topics/$slug/runs/$runId'
+    | '/app/topics/$topicId/runs/$runId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -170,48 +188,45 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
-    | '/subscriptions'
-    | '/welcome'
-    | '/inbox'
-    | '/topics'
-    | '/inbox/items/$itemId'
-    | '/topic/$slug'
+    | '/app/inbox'
+    | '/app/skills'
+    | '/app/subscriptions'
     | '/topics/$slug'
-    | '/topic/$slug/editions/$editionId'
-    | '/topics/$slug/editions/$editionId'
+    | '/app'
+    | '/app/skills/$skillId'
+    | '/app/topics/$topicId'
+    | '/app/topics/new'
+    | '/topics/$slug/runs/$runId'
+    | '/app/topics/$topicId/runs/$runId'
   id:
     | '__root__'
     | '/'
+    | '/app'
     | '/explore'
     | '/forgot-password'
     | '/login'
     | '/register'
-    | '/subscriptions'
-    | '/welcome'
-    | '/inbox/'
-    | '/topics/'
-    | '/inbox/items/$itemId'
-    | '/topic/$slug/'
-    | '/topics/$slug/'
-    | '/topic/$slug/editions/$editionId'
-    | '/topics/$slug/editions/$editionId'
+    | '/app/inbox'
+    | '/app/skills'
+    | '/app/subscriptions'
+    | '/topics/$slug'
+    | '/app/'
+    | '/app/skills/$skillId'
+    | '/app/topics/$topicId'
+    | '/app/topics/new'
+    | '/topics/$slug_/runs/$runId'
+    | '/app/topics/$topicId_/runs/$runId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   ExploreRoute: typeof ExploreRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
-  SubscriptionsRoute: typeof SubscriptionsRoute
-  WelcomeRoute: typeof WelcomeRoute
-  InboxIndexRoute: typeof InboxIndexRoute
-  TopicsIndexRoute: typeof TopicsIndexRoute
-  InboxItemsItemIdRoute: typeof InboxItemsItemIdRoute
-  TopicSlugIndexRoute: typeof TopicSlugIndexRoute
-  TopicsSlugIndexRoute: typeof TopicsSlugIndexRoute
-  TopicSlugEditionsEditionIdRoute: typeof TopicSlugEditionsEditionIdRoute
-  TopicsSlugEditionsEditionIdRoute: typeof TopicsSlugEditionsEditionIdRoute
+  TopicsSlugRoute: typeof TopicsSlugRoute
+  TopicsSlugRunsRunIdRoute: typeof TopicsSlugRunsRunIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -251,87 +273,122 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/subscriptions': {
-      id: '/subscriptions'
-      path: '/subscriptions'
-      fullPath: '/subscriptions'
-      preLoaderRoute: typeof SubscriptionsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/welcome': {
-      id: '/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof WelcomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inbox/': {
-      id: '/inbox/'
+    '/app/inbox': {
+      id: '/app/inbox'
       path: '/inbox'
-      fullPath: '/inbox/'
-      preLoaderRoute: typeof InboxIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/app/inbox'
+      preLoaderRoute: typeof AppInboxRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/topics/': {
-      id: '/topics/'
-      path: '/topics'
-      fullPath: '/topics/'
-      preLoaderRoute: typeof TopicsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/app/skills': {
+      id: '/app/skills'
+      path: '/skills'
+      fullPath: '/app/skills'
+      preLoaderRoute: typeof AppSkillsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/inbox/items/$itemId': {
-      id: '/inbox/items/$itemId'
-      path: '/inbox/items/$itemId'
-      fullPath: '/inbox/items/$itemId'
-      preLoaderRoute: typeof InboxItemsItemIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/app/subscriptions': {
+      id: '/app/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/app/subscriptions'
+      preLoaderRoute: typeof AppSubscriptionsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/topic/$slug/': {
-      id: '/topic/$slug/'
-      path: '/topic/$slug'
-      fullPath: '/topic/$slug/'
-      preLoaderRoute: typeof TopicSlugIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/topics/$slug/': {
-      id: '/topics/$slug/'
+    '/topics/$slug': {
+      id: '/topics/$slug'
       path: '/topics/$slug'
-      fullPath: '/topics/$slug/'
-      preLoaderRoute: typeof TopicsSlugIndexRouteImport
+      fullPath: '/topics/$slug'
+      preLoaderRoute: typeof TopicsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/topic/$slug/editions/$editionId': {
-      id: '/topic/$slug/editions/$editionId'
-      path: '/topic/$slug/editions/$editionId'
-      fullPath: '/topic/$slug/editions/$editionId'
-      preLoaderRoute: typeof TopicSlugEditionsEditionIdRouteImport
+    '/app/skills/$skillId': {
+      id: '/app/skills/$skillId'
+      path: '/$skillId'
+      fullPath: '/app/skills/$skillId'
+      preLoaderRoute: typeof AppSkillsSkillIdRouteImport
+      parentRoute: typeof AppSkillsRoute
+    }
+    '/app/topics/$topicId': {
+      id: '/app/topics/$topicId'
+      path: '/topics/$topicId'
+      fullPath: '/app/topics/$topicId'
+      preLoaderRoute: typeof AppTopicsTopicIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/topics/new': {
+      id: '/app/topics/new'
+      path: '/topics/new'
+      fullPath: '/app/topics/new'
+      preLoaderRoute: typeof AppTopicsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/topics/$slug_/runs/$runId': {
+      id: '/topics/$slug_/runs/$runId'
+      path: '/topics/$slug/runs/$runId'
+      fullPath: '/topics/$slug/runs/$runId'
+      preLoaderRoute: typeof TopicsSlugRunsRunIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/topics/$slug/editions/$editionId': {
-      id: '/topics/$slug/editions/$editionId'
-      path: '/topics/$slug/editions/$editionId'
-      fullPath: '/topics/$slug/editions/$editionId'
-      preLoaderRoute: typeof TopicsSlugEditionsEditionIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/app/topics/$topicId_/runs/$runId': {
+      id: '/app/topics/$topicId_/runs/$runId'
+      path: '/topics/$topicId/runs/$runId'
+      fullPath: '/app/topics/$topicId/runs/$runId'
+      preLoaderRoute: typeof AppTopicsTopicIdRunsRunIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppSkillsRouteChildren {
+  AppSkillsSkillIdRoute: typeof AppSkillsSkillIdRoute
+}
+
+const AppSkillsRouteChildren: AppSkillsRouteChildren = {
+  AppSkillsSkillIdRoute: AppSkillsSkillIdRoute,
+}
+
+const AppSkillsRouteWithChildren = AppSkillsRoute._addFileChildren(
+  AppSkillsRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppInboxRoute: typeof AppInboxRoute
+  AppSkillsRoute: typeof AppSkillsRouteWithChildren
+  AppSubscriptionsRoute: typeof AppSubscriptionsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppTopicsTopicIdRoute: typeof AppTopicsTopicIdRoute
+  AppTopicsNewRoute: typeof AppTopicsNewRoute
+  AppTopicsTopicIdRunsRunIdRoute: typeof AppTopicsTopicIdRunsRunIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppInboxRoute: AppInboxRoute,
+  AppSkillsRoute: AppSkillsRouteWithChildren,
+  AppSubscriptionsRoute: AppSubscriptionsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppTopicsTopicIdRoute: AppTopicsTopicIdRoute,
+  AppTopicsNewRoute: AppTopicsNewRoute,
+  AppTopicsTopicIdRunsRunIdRoute: AppTopicsTopicIdRunsRunIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   ExploreRoute: ExploreRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
-  SubscriptionsRoute: SubscriptionsRoute,
-  WelcomeRoute: WelcomeRoute,
-  InboxIndexRoute: InboxIndexRoute,
-  TopicsIndexRoute: TopicsIndexRoute,
-  InboxItemsItemIdRoute: InboxItemsItemIdRoute,
-  TopicSlugIndexRoute: TopicSlugIndexRoute,
-  TopicsSlugIndexRoute: TopicsSlugIndexRoute,
-  TopicSlugEditionsEditionIdRoute: TopicSlugEditionsEditionIdRoute,
-  TopicsSlugEditionsEditionIdRoute: TopicsSlugEditionsEditionIdRoute,
+  TopicsSlugRoute: TopicsSlugRoute,
+  TopicsSlugRunsRunIdRoute: TopicsSlugRunsRunIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

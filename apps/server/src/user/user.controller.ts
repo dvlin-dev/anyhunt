@@ -43,10 +43,10 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   /**
-   * 获取当前用户完整信息（包括配额）
+   * 获取当前用户资料
    */
   @Get('me')
-  @ApiOperation({ summary: 'Get current user profile with quota information' })
+  @ApiOperation({ summary: 'Get current user profile' })
   @ApiOkResponse({ description: 'Successfully returned user profile' })
   async getMe(@CurrentUser() user: CurrentUserDto) {
     return this.userService.getUserProfile(user.id);
@@ -80,11 +80,11 @@ export class UserController {
   }
 
   /**
-   * 删除账户（软删除）
+   * 删除账户及其产品数据
    */
   @Delete('account')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete user account (soft delete)' })
+  @ApiOperation({ summary: 'Delete user account and product data' })
   @ApiNoContentResponse({ description: 'Account deleted successfully' })
   async deleteAccount(
     @CurrentUser() user: CurrentUserDto,

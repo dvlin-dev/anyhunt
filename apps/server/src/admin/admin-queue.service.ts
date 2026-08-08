@@ -7,25 +7,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job } from 'bullmq';
 import {
+  EMAIL_DELIVERY_QUEUE,
   SCRAPE_QUEUE,
-  DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE,
-  DIGEST_SUBSCRIPTION_RUN_QUEUE,
-  DIGEST_SOURCE_SCHEDULER_QUEUE,
-  DIGEST_SOURCE_REFRESH_QUEUE,
-  DIGEST_WEBHOOK_DELIVERY_QUEUE,
-  DIGEST_EMAIL_DELIVERY_QUEUE,
+  TOPIC_RUN_QUEUE,
+  WEBHOOK_DELIVERY_QUEUE,
 } from '../queue/queue.constants';
 import type { QueueJobsQuery } from './dto';
 
 // 队列名称映射
 const QUEUE_NAMES = [
   SCRAPE_QUEUE,
-  DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE,
-  DIGEST_SUBSCRIPTION_RUN_QUEUE,
-  DIGEST_SOURCE_SCHEDULER_QUEUE,
-  DIGEST_SOURCE_REFRESH_QUEUE,
-  DIGEST_WEBHOOK_DELIVERY_QUEUE,
-  DIGEST_EMAIL_DELIVERY_QUEUE,
+  TOPIC_RUN_QUEUE,
+  EMAIL_DELIVERY_QUEUE,
+  WEBHOOK_DELIVERY_QUEUE,
 ] as const;
 
 @Injectable()
@@ -34,27 +28,15 @@ export class AdminQueueService {
 
   constructor(
     @InjectQueue(SCRAPE_QUEUE) private scrapeQueue: Queue,
-    @InjectQueue(DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE)
-    private digestSubscriptionSchedulerQueue: Queue,
-    @InjectQueue(DIGEST_SUBSCRIPTION_RUN_QUEUE)
-    private digestSubscriptionRunQueue: Queue,
-    @InjectQueue(DIGEST_SOURCE_SCHEDULER_QUEUE)
-    private digestSourceSchedulerQueue: Queue,
-    @InjectQueue(DIGEST_SOURCE_REFRESH_QUEUE)
-    private digestSourceRefreshQueue: Queue,
-    @InjectQueue(DIGEST_WEBHOOK_DELIVERY_QUEUE)
-    private digestWebhookDeliveryQueue: Queue,
-    @InjectQueue(DIGEST_EMAIL_DELIVERY_QUEUE)
-    private digestEmailDeliveryQueue: Queue,
+    @InjectQueue(TOPIC_RUN_QUEUE) private topicRunQueue: Queue,
+    @InjectQueue(EMAIL_DELIVERY_QUEUE) private emailDeliveryQueue: Queue,
+    @InjectQueue(WEBHOOK_DELIVERY_QUEUE) private webhookDeliveryQueue: Queue,
   ) {
     this.queues = new Map([
       [SCRAPE_QUEUE, scrapeQueue],
-      [DIGEST_SUBSCRIPTION_SCHEDULER_QUEUE, digestSubscriptionSchedulerQueue],
-      [DIGEST_SUBSCRIPTION_RUN_QUEUE, digestSubscriptionRunQueue],
-      [DIGEST_SOURCE_SCHEDULER_QUEUE, digestSourceSchedulerQueue],
-      [DIGEST_SOURCE_REFRESH_QUEUE, digestSourceRefreshQueue],
-      [DIGEST_WEBHOOK_DELIVERY_QUEUE, digestWebhookDeliveryQueue],
-      [DIGEST_EMAIL_DELIVERY_QUEUE, digestEmailDeliveryQueue],
+      [TOPIC_RUN_QUEUE, topicRunQueue],
+      [EMAIL_DELIVERY_QUEUE, emailDeliveryQueue],
+      [WEBHOOK_DELIVERY_QUEUE, webhookDeliveryQueue],
     ]);
   }
 
@@ -177,15 +159,9 @@ export class AdminQueueService {
       );
     }
 
-    const state = await job.getState();
-    const logs = await queue.getJobLogs(jobId);
-
     return {
       ...this.formatJob(job),
-      state,
-      logs: logs.logs,
-      stacktrace: job.stacktrace,
-      returnvalue: job.returnvalue as unknown,
+      state: await job.getState(),
     };
   }
 
@@ -255,18 +231,24 @@ export class AdminQueueService {
     return {
       id: job.id,
       name: job.name,
-      data: job.data as unknown,
-      opts: {
-        attempts: job.opts.attempts,
-        delay: job.opts.delay,
-        priority: job.opts.priority,
-      },
-      progress: job.progress,
       attemptsMade: job.attemptsMade,
+      maxAttempts: job.opts.attempts ?? 1,
       processedOn: job.processedOn ? new Date(job.processedOn) : null,
       finishedOn: job.finishedOn ? new Date(job.finishedOn) : null,
       timestamp: new Date(job.timestamp),
-      failedReason: job.failedReason,
+      error: this.safeError(job.failedReason),
     };
+  }
+
+  private safeError(value?: string): string | null {
+    if (!value) return null;
+    return value
+      .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [REDACTED]')
+      .replace(
+        /\b(?:sk|key|token|secret)[-_][A-Za-z0-9._-]{8,}\b/gi,
+        '[REDACTED]',
+      )
+      .replace(/https?:\/\/[^\s]+/gi, '[URL REDACTED]')
+      .slice(0, 500);
   }
 }

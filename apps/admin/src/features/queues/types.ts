@@ -5,7 +5,7 @@ export type { Pagination } from '@/lib/types';
 import type { Pagination } from '@/lib/types';
 
 /** 队列名称 */
-export type QueueName = 'screenshot' | 'scrape' | 'crawl' | 'batch-scrape';
+export type QueueName = 'scrape' | 'topic-run' | 'delivery-email' | 'delivery-webhook';
 
 /** 队列任务状态 */
 export type QueueJobStatus = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed';
@@ -35,18 +35,12 @@ export interface AllQueueStats {
 export interface QueueJob {
   id: string;
   name: string;
-  data: Record<string, unknown>;
-  opts: {
-    attempts: number | null;
-    delay: number | null;
-    priority: number | null;
-  };
-  progress: number | string | object | null;
   attemptsMade: number;
+  maxAttempts: number;
   processedOn: string | null;
   finishedOn: string | null;
   timestamp: string;
-  failedReason: string | null;
+  error: string | null;
 }
 
 /** 队列任务查询参数 */

@@ -19,10 +19,15 @@ type MockRedisService = {
   ping: Mock;
 };
 
+type MockQueue = {
+  getJobCounts: Mock;
+};
+
 describe('HealthController', () => {
   let controller: HealthController;
   let mockPrisma: MockPrismaService;
   let mockRedis: MockRedisService;
+  let mockQueues: MockQueue[];
 
   beforeEach(() => {
     mockPrisma = {
@@ -32,8 +37,18 @@ describe('HealthController', () => {
     mockRedis = {
       ping: vi.fn(),
     };
+    mockQueues = Array.from({ length: 4 }, () => ({
+      getJobCounts: vi.fn().mockResolvedValue({}),
+    }));
 
-    controller = new HealthController(mockPrisma as any, mockRedis as any);
+    controller = new HealthController(
+      mockPrisma as any,
+      mockRedis as any,
+      mockQueues[0] as any,
+      mockQueues[1] as any,
+      mockQueues[2] as any,
+      mockQueues[3] as any,
+    );
   });
 
   describe('live', () => {
@@ -48,6 +63,7 @@ describe('HealthController', () => {
 
       expect(mockPrisma.$queryRaw).not.toHaveBeenCalled();
       expect(mockRedis.ping).not.toHaveBeenCalled();
+      expect(mockQueues[0]?.getJobCounts).not.toHaveBeenCalled();
     });
   });
 
@@ -61,6 +77,7 @@ describe('HealthController', () => {
       expect(result.status).toBe('ok');
       expect(result.services.database).toBe(true);
       expect(result.services.redis).toBe(true);
+      expect(result.services.queues).toBe(true);
     });
 
     it('should include timestamp', async () => {
@@ -101,6 +118,21 @@ describe('HealthController', () => {
       expect(mockRedis.ping).toHaveBeenCalled();
     });
 
+    it('should check every required queue connection', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+      mockRedis.ping.mockResolvedValue(true);
+
+      await controller.check();
+
+      for (const queue of mockQueues) {
+        expect(queue.getJobCounts).toHaveBeenCalledWith(
+          'waiting',
+          'active',
+          'delayed',
+        );
+      }
+    });
+
     it('should report degraded status when database fails', async () => {
       mockPrisma.$queryRaw.mockRejectedValue(new Error('Connection refused'));
       mockRedis.ping.mockResolvedValue(true);
@@ -110,6 +142,7 @@ describe('HealthController', () => {
       expect(result.status).toBe('degraded');
       expect(result.services.database).toBe(false);
       expect(result.services.redis).toBe(true);
+      expect(result.services.queues).toBe(true);
     });
 
     it('should report degraded status when redis fails', async () => {
@@ -121,6 +154,7 @@ describe('HealthController', () => {
       expect(result.status).toBe('degraded');
       expect(result.services.database).toBe(true);
       expect(result.services.redis).toBe(false);
+      expect(result.services.queues).toBe(true);
     });
 
     it('should report degraded when both services fail', async () => {
@@ -132,6 +166,20 @@ describe('HealthController', () => {
       expect(result.status).toBe('degraded');
       expect(result.services.database).toBe(false);
       expect(result.services.redis).toBe(false);
+      expect(result.services.queues).toBe(true);
+    });
+
+    it('should report degraded when a queue connection fails', async () => {
+      mockPrisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+      mockRedis.ping.mockResolvedValue(true);
+      mockQueues[2]?.getJobCounts.mockRejectedValue(
+        new Error('Redis unavailable'),
+      );
+
+      const result = await controller.check();
+
+      expect(result.status).toBe('degraded');
+      expect(result.services.queues).toBe(false);
     });
   });
 
@@ -148,13 +196,11 @@ describe('HealthController', () => {
       expect(result.services.redis).toBe(true);
     });
 
-    it('should return degraded when services fail', async () => {
+    it('should return HTTP 503 when dependencies fail', async () => {
       mockPrisma.$queryRaw.mockRejectedValue(new Error('DB error'));
       mockRedis.ping.mockResolvedValue(false);
 
-      const result = await controller.ready();
-
-      expect(result.status).toBe('degraded');
+      await expect(controller.ready()).rejects.toMatchObject({ status: 503 });
     });
   });
 });

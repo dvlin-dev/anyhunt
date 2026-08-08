@@ -114,7 +114,7 @@ export default function LogsIpPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="IP Monitor" description="来源 IP 请求量与错误率监控" />
+      <PageHeader title="IP Monitor" description="Monitor request volume and error rates by client IP." />
 
       <Card>
         <CardHeader>

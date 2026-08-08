@@ -21,11 +21,8 @@
     "src/user/**/*.ts",
     "src/email/**/*.ts",
     "src/queue/**/*.ts",
-    "src/payment/**/*.ts",
     "src/storage/**/*.ts",
     "src/health/**/*.ts",
-    "src/api-key/**/*.ts",
-    "src/quota/**/*.ts",
     "src/browser/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]

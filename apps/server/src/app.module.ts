@@ -11,10 +11,7 @@ import { QueueModule } from './queue';
 import { EmailModule } from './email';
 import { AuthModule } from './auth';
 import { UserModule } from './user';
-import { PaymentModule } from './payment';
-import { StorageModule } from './storage';
 import { HealthModule } from './health';
-import { QuotaModule } from './quota';
 import { BrowserModule } from './browser';
 import { ScraperModule } from './scraper';
 import { MapModule } from './map';
@@ -29,16 +26,23 @@ import {
   type GlobalThrottleConfig,
   shouldSkipGlobalThrottle,
 } from './common/guards';
-import { RedemptionModule } from './redemption';
-import { DigestModule } from './digest';
 import { NotFoundModule } from './not-found';
 import { LlmModule } from './llm';
 import { LogModule, RequestLogMiddleware } from './log';
+import { AgentModule } from './agent/agent.module';
+import { TopicModule } from './topic/topic.module';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { InboxModule } from './inbox/inbox.module';
+import { DeliveryModule } from './delivery/delivery.module';
+import { validateEnvironment } from './config/environment';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      cache: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      validate: validateEnvironment,
     }),
     ThrottleModule,
     ThrottlerModule.forRootAsync({
@@ -75,18 +79,18 @@ import { LogModule, RequestLogMiddleware } from './log';
     EmailModule,
     AuthModule,
     UserModule,
-    PaymentModule,
-    StorageModule,
     HealthModule,
-    QuotaModule,
     BrowserModule,
     ScraperModule,
     MapModule,
     SearchModule,
     AdminModule,
     LlmModule,
-    DigestModule,
-    RedemptionModule,
+    AgentModule,
+    TopicModule,
+    SubscriptionModule,
+    InboxModule,
+    DeliveryModule,
     // NotFoundModule must be LAST to catch all unmatched routes
     NotFoundModule,
   ],

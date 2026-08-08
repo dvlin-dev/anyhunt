@@ -66,10 +66,10 @@ Web Search、Fetch、RSS、站点抓取、API、SQL 和 Browser 都是 Agent 可
 
 ## 产品与技术边界
 
-- Anyhunt 不是通用 Agent 开发平台、工作流构建器、Connector SDK、向量知识库或自动进化平台。
+- Anyhunt 不是通用 Agent 开发平台、工作流构建器或无人监管的自修改系统。
 - 底层运行时是通用 Pi Agent，但公开产品只服务于 Topic 持续研究与 Digest 闭环。
-- 不建立 `ResearchConnector`、Workflow DSL、流程图、通用 `State` 或通用 Memory 模型。
-- 不建立 Billing、Quota、Payment、Credits、会员等级或 Redemption；1.0 不向用户计费。
+- 不建立平台专用 Connector、Workflow DSL、流程图、通用 `State` 或通用 Memory 模型。
+- 1.0 不建立商业化、余额、会员等级或兑换领域，也不向用户计费。
 - 调度、持久化、去重、权限、运行预算和投递由确定性的 Host 负责；研究方法由 Agent 与 Skill 表达。
 - Anyhunt 独立拥有账号、数据和部署。其他产品只能通过显式 HTTP 合同集成，不得导入 Anyhunt
   workspace 包或共享持久化层。
@@ -89,7 +89,7 @@ Anyhunt 1.0 必须同时满足以下条件：
 9. Email/Webhook 投递有持久化幂等状态，Inbox 不维护重复数据；
 10. 公开 Topic 具备举报、下架和管理端审核能力；
 11. 至少一个真实 Provider 与真实采集链路通过脱敏生产 smoke；
-12. 旧固定流水线、Source、Score、Edition、Content、Feedback Pattern 和 Billing 体系全部删除。
+12. 运行时、领域模型和产品界面只保留本文件定义的 1.0 闭环，不存在并行的研究流水线。
 
 ## 1.0 之外
 
@@ -98,6 +98,6 @@ Anyhunt 1.0 必须同时满足以下条件：
 - 用户自行配置任意 MCP Server；
 - 为每位订阅者生成不同版本的同一 Topic；
 - 复杂 Workflow、多人共同编辑、自动进化和无人监管的自修改系统；
-- 向量数据库、通用知识库和 Connector SDK。
+- 通用知识库和 Connector SDK。
 
 这些能力只有在核心 Topic 留存和 Digest 质量证明真实需求后，才单独设计。

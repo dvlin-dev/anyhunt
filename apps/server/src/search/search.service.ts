@@ -8,14 +8,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScraperService } from '../scraper/scraper.service';
-import { BillingService } from '../billing/billing.service';
 import type { SearchOptions } from './dto/search.dto';
 import type {
   SearchResult,
   SearchResponse,
   SearXNGResponse,
 } from './search.types';
-import { randomUUID } from 'crypto';
 import { serverHttpRaw } from '../common/http/server-http-client';
 
 /** 默认重试次数 */
@@ -38,7 +36,6 @@ export class SearchService {
   constructor(
     private config: ConfigService,
     private scraperService: ScraperService,
-    private billingService: BillingService,
   ) {
     this.searxngUrl = config.get('SEARXNG_URL') || 'http://localhost:8080';
     this.retryCount = config.get('SEARCH_RETRY_COUNT') || DEFAULT_RETRY_COUNT;
@@ -49,10 +46,7 @@ export class SearchService {
   /**
    * 执行搜索
    */
-  async search(
-    userId: string,
-    options: SearchOptions,
-  ): Promise<SearchResponse> {
+  async search(options: SearchOptions): Promise<SearchResponse> {
     const {
       query,
       limit = 10,
@@ -65,53 +59,30 @@ export class SearchService {
       scrapeOptions,
     } = options;
 
-    const billingKey = 'digest.acquire.search' as const;
-    const referenceId = randomUUID();
-    const billing = await this.billingService.deductOrThrow({
-      userId,
-      billingKey,
-      referenceId,
+    const searchResults = await this.performSearch({
+      query,
+      limit,
+      categories,
+      engines,
+      language,
+      timeRange,
+      safeSearch,
     });
 
-    try {
-      // 1. 调用 SearXNG API
-      const searchResults = await this.performSearch({
-        query,
-        limit,
-        categories,
-        engines,
-        language,
-        timeRange,
-        safeSearch,
-      });
-
-      // 2. 如果需要抓取结果页面
-      if (scrapeResults && searchResults.results.length > 0) {
-        const enrichedResults = await this.enrichWithContent(
-          userId,
-          searchResults.results,
-          scrapeOptions,
-        );
-        return {
-          query: searchResults.query,
-          numberOfResults: searchResults.numberOfResults,
-          results: enrichedResults,
-          suggestions: searchResults.suggestions,
-        };
-      }
-
-      return searchResults;
-    } catch (error) {
-      if (billing) {
-        await this.billingService.refundOnFailure({
-          userId,
-          billingKey,
-          referenceId,
-          breakdown: billing.deduct.breakdown,
-        });
-      }
-      throw error;
+    if (scrapeResults && searchResults.results.length > 0) {
+      const enrichedResults = await this.enrichWithContent(
+        searchResults.results,
+        scrapeOptions,
+      );
+      return {
+        query: searchResults.query,
+        numberOfResults: searchResults.numberOfResults,
+        results: enrichedResults,
+        suggestions: searchResults.suggestions,
+      };
     }
+
+    return searchResults;
   }
 
   /**
@@ -188,7 +159,7 @@ export class SearchService {
 
         return {
           query: data.query,
-          numberOfResults: data.number_of_results,
+          numberOfResults: data.number_of_results ?? data.results.length,
           results,
           suggestions: data.suggestions,
         };
@@ -252,7 +223,6 @@ export class SearchService {
    * 并发抓取搜索结果页面内容
    */
   private async enrichWithContent(
-    userId: string,
     results: SearchResult[],
     scrapeOptions?: Record<string, unknown>,
   ): Promise<SearchResult[]> {
@@ -263,7 +233,7 @@ export class SearchService {
       const batchResults = await Promise.all(
         batch.map(async (result) => {
           try {
-            const scraped = await this.scraperService.scrapeSync(userId, {
+            const scraped = await this.scraperService.scrape({
               url: result.url,
               formats: ['markdown'],
               onlyMainContent: true,

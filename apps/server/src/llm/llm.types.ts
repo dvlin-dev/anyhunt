@@ -7,7 +7,6 @@
  */
 
 import type { LlmProviderType } from './dto';
-import type { SubscriptionTier } from '../../generated/prisma-main/client';
 
 export type LlmProviderListItem = {
   id: string;
@@ -31,7 +30,6 @@ export type LlmModelListItem = {
   displayName: string;
   inputTokenPrice: number;
   outputTokenPrice: number;
-  minTier: SubscriptionTier;
   maxContextTokens: number;
   maxOutputTokens: number;
   capabilitiesJson: unknown;
@@ -43,7 +41,7 @@ export type LlmModelListItem = {
 
 export type LlmSettingsDto = {
   id: string;
-  defaultDigestModelId: string;
+  defaultAgentModelId: string;
   createdAt: Date;
   updatedAt: Date;
 };

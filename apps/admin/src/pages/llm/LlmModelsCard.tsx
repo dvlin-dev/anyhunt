@@ -60,7 +60,6 @@ export function LlmModelsCard({
                 <TableHead>modelId</TableHead>
                 <TableHead>upstreamId</TableHead>
                 <TableHead>Provider</TableHead>
-                <TableHead>Tier</TableHead>
                 <TableHead>Pricing</TableHead>
                 <TableHead>Context</TableHead>
                 <TableHead>Status</TableHead>
@@ -97,7 +96,6 @@ export function LlmModelsCard({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs">{m.minTier}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       ${m.inputTokenPrice.toFixed(2)} / ${m.outputTokenPrice.toFixed(2)}
                     </TableCell>

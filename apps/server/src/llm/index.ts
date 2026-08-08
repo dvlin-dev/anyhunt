@@ -1,2 +1,2 @@
 export * from './llm.module';
-export * from './llm-language-model.service';
+export * from './llm-upstream-resolver.service';

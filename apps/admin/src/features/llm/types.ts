@@ -6,8 +6,6 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import type { SubscriptionTier } from '@/lib/types';
-
 export type LlmProviderType = string;
 
 export type LlmProviderPreset = {
@@ -21,7 +19,7 @@ export type LlmProviderPreset = {
 
 export type LlmSettings = {
   id: string;
-  defaultDigestModelId: string;
+  defaultAgentModelId: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -48,7 +46,6 @@ export type LlmModelListItem = {
   displayName: string;
   inputTokenPrice: number;
   outputTokenPrice: number;
-  minTier: SubscriptionTier;
   maxContextTokens: number;
   maxOutputTokens: number;
   capabilitiesJson: Record<string, unknown> | string;
@@ -83,7 +80,6 @@ export type CreateLlmModelInput = {
   enabled?: boolean;
   inputTokenPrice: number;
   outputTokenPrice: number;
-  minTier: SubscriptionTier;
   maxContextTokens: number;
   maxOutputTokens: number;
   capabilities?: LlmModelCapabilities;
@@ -98,7 +94,6 @@ export type UpdateLlmModelInput = {
   enabled?: boolean;
   inputTokenPrice?: number;
   outputTokenPrice?: number;
-  minTier?: SubscriptionTier;
   maxContextTokens?: number;
   maxOutputTokens?: number;
   capabilities?: LlmModelCapabilities;
@@ -107,7 +102,7 @@ export type UpdateLlmModelInput = {
 };
 
 export type UpdateLlmSettingsInput = {
-  defaultDigestModelId: string;
+  defaultAgentModelId: string;
 };
 
 export type ReasoningConfig = {

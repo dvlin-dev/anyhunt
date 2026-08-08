@@ -1,104 +1,87 @@
 /**
- * [INPUT]: Webhook URL + payload
- * [OUTPUT]: boolean - send success/failure
- * [POS]: Shared webhook sender with SSRF guard and signature
- *
- * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
+ * [INPUT]: HTTPS webhook URL（或精确配置的本地验收 Sink）、订阅密钥、事件载荷与稳定 Delivery ID
+ * [OUTPUT]: Signed SSRF-safe POST or typed retryability error
+ * [POS]: Shared outbound webhook transport; contains no Delivery persistence
  */
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createHmac, timingSafeEqual } from 'crypto';
+
+import { Injectable } from '@nestjs/common';
+import { createHmac } from 'node:crypto';
 import { UrlValidator } from '../validators/url.validator';
-import { serverHttpRaw } from '../http/server-http-client';
+import {
+  fetchWithSsrGuard,
+  TooManyRedirectsError,
+  UnsafeUrlError,
+} from '../utils/ssrf-fetch';
+import { isConfiguredLocalWebhookSink } from '../utils/local-webhook-sink';
 
 export interface WebhookPayload {
   event: string;
   data: unknown;
-  timestamp?: string;
+}
+
+export class WebhookRequestError extends Error {
+  constructor(
+    readonly code: string,
+    readonly retryable: boolean,
+  ) {
+    super(code);
+    this.name = 'WebhookRequestError';
+  }
 }
 
 @Injectable()
 export class WebhookService {
-  private readonly logger = new Logger(WebhookService.name);
-  private readonly webhookSecret: string;
+  constructor(private readonly urlValidator: UrlValidator) {}
 
-  constructor(
-    private config: ConfigService,
-    private urlValidator: UrlValidator,
-  ) {
-    this.webhookSecret = config.get('WEBHOOK_SECRET') || '';
-  }
-
-  /**
-   * 发送 Webhook 请求
-   */
-  async send(url: string, payload: WebhookPayload): Promise<boolean> {
-    if (!(await this.urlValidator.isAllowed(url))) {
-      this.logger.warn(`Webhook URL blocked by SSRF guard: ${url}`);
-      return false;
-    }
-
-    const body = {
+  async send(
+    url: string,
+    payload: WebhookPayload,
+    secret: string,
+    deliveryId: string,
+  ): Promise<void> {
+    const bodyString = JSON.stringify({
       ...payload,
+      deliveryId,
       timestamp: new Date().toISOString(),
-    };
-    const bodyString = JSON.stringify(body);
-    const signature = this.generateSignature(bodyString);
+    });
+    const signature = createHmac('sha256', secret)
+      .update(bodyString)
+      .digest('hex');
 
     try {
-      const response = await serverHttpRaw({
-        url,
+      const requestInit: RequestInit = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Webhook-Signature': signature,
-          'X-Webhook-Event': payload.event,
+          'Idempotency-Key': deliveryId,
+          'X-Anyhunt-Event': payload.event,
+          'X-Anyhunt-Signature': `sha256=${signature}`,
         },
         body: bodyString,
         redirect: 'manual',
-        timeoutMs: 10000,
-      });
-
-      if (!response.ok) {
-        this.logger.warn(`Webhook failed: ${url} returned ${response.status}`);
-        return false;
-      }
-
-      this.logger.log(`Webhook sent: ${payload.event} -> ${url}`);
-      return true;
+        signal: AbortSignal.timeout(10_000),
+      };
+      const response = isConfiguredLocalWebhookSink(url)
+        ? await fetch(url, { ...requestInit, redirect: 'error' })
+        : await fetchWithSsrGuard(this.urlValidator, url, {
+            ...requestInit,
+            maxRedirects: 3,
+          });
+      if (response.ok) return;
+      const retryable =
+        response.status === 408 ||
+        response.status === 429 ||
+        response.status >= 500;
+      throw new WebhookRequestError(`UPSTREAM_${response.status}`, retryable);
     } catch (error) {
-      this.logger.error(`Webhook error: ${url}`, error);
-      return false;
+      if (error instanceof WebhookRequestError) throw error;
+      if (
+        error instanceof UnsafeUrlError ||
+        error instanceof TooManyRedirectsError
+      ) {
+        throw new WebhookRequestError('WEBHOOK_URL_BLOCKED', false);
+      }
+      throw new WebhookRequestError('WEBHOOK_NETWORK_ERROR', true);
     }
-  }
-
-  /**
-   * 生成 HMAC 签名
-   */
-  private generateSignature(payload: string): string {
-    if (!this.webhookSecret) return '';
-
-    return createHmac('sha256', this.webhookSecret)
-      .update(payload)
-      .digest('hex');
-  }
-
-  /**
-   * 验证 Webhook 签名（用于接收方）
-   * 使用 timingSafeEqual 防止时序攻击
-   */
-  verifySignature(payload: string, signature: string): boolean {
-    const expected = this.generateSignature(payload);
-    if (!expected || !signature) return false;
-
-    // 确保两个 Buffer 长度相同（timingSafeEqual 要求）
-    const expectedBuffer = Buffer.from(expected, 'hex');
-    const signatureBuffer = Buffer.from(signature, 'hex');
-
-    if (expectedBuffer.length !== signatureBuffer.length) {
-      return false;
-    }
-
-    return timingSafeEqual(expectedBuffer, signatureBuffer);
   }
 }

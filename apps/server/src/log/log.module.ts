@@ -9,13 +9,19 @@ import { RequestLogController } from './request-log.controller';
 import { RequestLogMiddleware } from './request-log.middleware';
 import { RequestLogService } from './request-log.service';
 import { RequestLogCleanupService } from './request-log-cleanup.service';
+import { OperationalCleanupService } from './operational-cleanup.service';
+import { OperationalMetricsService } from './operational-metrics.service';
+import { QueueModule } from '../queue/queue.module';
 
 @Module({
+  imports: [QueueModule],
   controllers: [RequestLogController],
   providers: [
     RequestLogService,
     RequestLogMiddleware,
     RequestLogCleanupService,
+    OperationalCleanupService,
+    OperationalMetricsService,
   ],
   exports: [RequestLogService, RequestLogMiddleware],
 })

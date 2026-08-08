@@ -5,17 +5,17 @@ import type { LlmSecretService } from '../llm-secret.service';
 import { LlmAdminService } from '../llm-admin.service';
 
 function createMockPrisma(params: {
-  defaultDigestModelId?: string;
+  defaultAgentModelId?: string;
   countImpl: (args: any) => number;
 }): PrismaService {
-  const defaultDigestModelId = params.defaultDigestModelId ?? 'gpt-4o';
+  const defaultAgentModelId = params.defaultAgentModelId ?? 'gpt-4o';
   const now = new Date();
 
   const mock = {
     llmSettings: {
       findUnique: vi.fn().mockResolvedValue({
         id: 'default',
-        defaultDigestModelId,
+        defaultAgentModelId,
         createdAt: now,
         updatedAt: now,
       }),

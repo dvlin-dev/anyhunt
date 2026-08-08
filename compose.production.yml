@@ -1,0 +1,167 @@
+name: anyhunt-production
+
+x-server-environment: &server-environment
+  NODE_ENV: production
+  PORT: '3000'
+  DATABASE_URL: postgresql://anyhunt:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/anyhunt
+  REDIS_URL: redis://redis:6379
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+  BETTER_AUTH_URL: https://server.anyhunt.app
+  TRUSTED_ORIGINS: https://anyhunt.app,https://www.anyhunt.app,https://admin.anyhunt.app
+  ANYHUNT_WWW_URL: https://anyhunt.app
+  ANYHUNT_LLM_SECRET_KEY: ${ANYHUNT_LLM_SECRET_KEY:?ANYHUNT_LLM_SECRET_KEY is required}
+  ANYHUNT_DATA_SECRET_KEY: ${ANYHUNT_DATA_SECRET_KEY:?ANYHUNT_DATA_SECRET_KEY is required}
+  SEARXNG_URL: http://searxng:8080
+  TRUST_PROXY: '1'
+  REQUEST_LOG_RETENTION_DAYS: '30'
+  ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+  EMAIL_FROM: ${EMAIL_FROM:-Anyhunt <noreply@anyhunt.app>}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  SMTP_URL: ${SMTP_URL:-}
+  BROWSER_POOL_SIZE: '2'
+  BROWSER_WARMUP_COUNT: '1'
+  BROWSER_IDLE_TIMEOUT: '300000'
+  MAX_PAGES_PER_BROWSER: '100'
+
+x-server-image: &server-image
+  image: anyhunt/server:production
+
+x-server-build: &server-build
+  context: .
+  dockerfile: apps/server/Dockerfile
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: anyhunt
+      POSTGRES_USER: anyhunt
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U anyhunt -d anyhunt]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+    restart: unless-stopped
+    command: [redis-server, --appendonly, 'yes', --save, '60', '1']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 3s
+    logging: *default-logging
+
+  searxng:
+    image: anyhunt/searxng:production
+    build:
+      context: ./compose/searxng
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?SEARXNG_SECRET is required}
+    healthcheck:
+      test: [CMD-SHELL, wget -q -O /dev/null http://127.0.0.1:8080/]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging: *default-logging
+
+  migrate:
+    <<: *server-image
+    restart: no
+    environment:
+      DATABASE_URL: postgresql://anyhunt:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/anyhunt
+    command: [npx, prisma, migrate, deploy, --config, prisma.main.config.ts]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *default-logging
+
+  seed-provider:
+    <<: *server-image
+    restart: no
+    environment:
+      DATABASE_URL: postgresql://anyhunt:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/anyhunt
+      ANYHUNT_LLM_SECRET_KEY: ${ANYHUNT_LLM_SECRET_KEY:?ANYHUNT_LLM_SECRET_KEY is required}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY is required}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:?OPENAI_BASE_URL is required}
+      OPENAI_MODEL: ${OPENAI_MODEL:?OPENAI_MODEL is required}
+    command: [node, dist/scripts/seed-local-provider.js]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    logging: *default-logging
+
+  server:
+    <<: *server-image
+    build: *server-build
+    restart: unless-stopped
+    environment: *server-environment
+    ports:
+      - 3202:3000
+    shm_size: 1gb
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed-provider:
+        condition: service_completed_successfully
+    logging: *default-logging
+
+  web:
+    image: anyhunt/web:production
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: https://server.anyhunt.app
+    restart: unless-stopped
+    ports:
+      - 3200:3000
+    depends_on:
+      server:
+        condition: service_healthy
+    logging: *default-logging
+
+  admin:
+    image: anyhunt/admin:production
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_API_URL: https://server.anyhunt.app
+    restart: unless-stopped
+    ports:
+      - 3203:8080
+    depends_on:
+      server:
+        condition: service_healthy
+    logging: *default-logging
+
+volumes:
+  postgres-data:
+  redis-data:

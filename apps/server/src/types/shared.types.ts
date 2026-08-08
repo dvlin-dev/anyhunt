@@ -3,8 +3,6 @@
  * 用于跨模块共享的通用类型
  */
 
-import type { SubscriptionTier } from './tier.types';
-
 /**
  * 认证请求接口
  */
@@ -12,7 +10,7 @@ export interface AuthenticatedRequest {
   user: {
     id: string;
     email: string;
-    subscriptionTier: SubscriptionTier;
+    isAdmin: boolean;
   };
 }
 

@@ -7,21 +7,21 @@
 import type { QueueJobStatus, QueueName } from './types';
 
 export const QUEUE_LABELS: Record<QueueName, string> = {
-  screenshot: 'Screenshot',
-  scrape: 'Scrape',
-  crawl: 'Crawl',
-  'batch-scrape': 'Batch Scrape',
+  scrape: 'Acquisition',
+  'topic-run': 'Topic runs',
+  'delivery-email': 'Email delivery',
+  'delivery-webhook': 'Webhook delivery',
 };
 
 export const QUEUE_STATUS_TABS: Array<{ value: QueueJobStatus; label: string }> = [
-  { value: 'waiting', label: '等待中' },
-  { value: 'active', label: '处理中' },
-  { value: 'completed', label: '已完成' },
-  { value: 'failed', label: '失败' },
-  { value: 'delayed', label: '延迟' },
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'delayed', label: 'Delayed' },
 ];
 
-export type QueueConfirmAction = 'retry' | 'clean-completed' | 'clean-failed' | 'cleanup-stale';
+export type QueueConfirmAction = 'retry' | 'clean-completed' | 'clean-failed';
 
 export function getQueueConfirmDescription(
   action: QueueConfirmAction,
@@ -31,13 +31,11 @@ export function getQueueConfirmDescription(
 
   switch (action) {
     case 'retry':
-      return `确定要重试 ${queueLabel} 队列中所有失败的任务吗？`;
+      return `Retry every failed job in the ${queueLabel} queue?`;
     case 'clean-completed':
-      return `确定要清理 ${queueLabel} 队列中所有已完成的任务吗？`;
+      return `Remove every completed job from the ${queueLabel} queue?`;
     case 'clean-failed':
-      return `确定要清理 ${queueLabel} 队列中所有失败的任务吗？`;
-    case 'cleanup-stale':
-      return '确定要清理所有卡住超过 30 分钟的任务吗？这些任务将被标记为失败。';
+      return `Remove every failed job from the ${queueLabel} queue?`;
     default:
       return '';
   }

@@ -155,7 +155,7 @@ export default function LogsUsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="User Analysis" description="基于请求日志的用户行为统计" />
+      <PageHeader title="User Analysis" description="Review user activity derived from request logs." />
 
       <Card>
         <CardHeader>

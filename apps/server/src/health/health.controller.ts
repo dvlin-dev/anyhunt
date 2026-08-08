@@ -6,11 +6,24 @@
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
 
-import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ServiceUnavailableException,
+  VERSION_NEUTRAL,
+} from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from '../auth/decorators';
 import { PrismaService } from '../prisma';
 import { RedisService } from '../redis';
+import {
+  EMAIL_DELIVERY_QUEUE,
+  SCRAPE_QUEUE,
+  TOPIC_RUN_QUEUE,
+  WEBHOOK_DELIVERY_QUEUE,
+} from '../queue/queue.constants';
 
 interface HealthCheckResponse {
   status: 'ok' | 'degraded';
@@ -19,6 +32,7 @@ interface HealthCheckResponse {
   services: {
     database: boolean;
     redis: boolean;
+    queues: boolean;
   };
 }
 
@@ -43,6 +57,10 @@ export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    @InjectQueue(SCRAPE_QUEUE) private readonly scrapeQueue: Queue,
+    @InjectQueue(TOPIC_RUN_QUEUE) private readonly topicRunQueue: Queue,
+    @InjectQueue(EMAIL_DELIVERY_QUEUE) private readonly emailQueue: Queue,
+    @InjectQueue(WEBHOOK_DELIVERY_QUEUE) private readonly webhookQueue: Queue,
   ) {}
 
   @ApiOperation({ summary: '健康检查', description: '检查所有服务的健康状态' })
@@ -50,18 +68,20 @@ export class HealthController {
   @Public()
   @Get()
   async check(): Promise<HealthCheckResponse> {
-    const [dbOk, redisOk] = await Promise.all([
+    const [dbOk, redisOk, queuesOk] = await Promise.all([
       this.checkDatabase(),
       this.redis.ping(),
+      this.checkQueues(),
     ]);
 
     return {
-      status: dbOk && redisOk ? 'ok' : 'degraded',
+      status: dbOk && redisOk && queuesOk ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
       services: {
         database: dbOk,
         redis: redisOk,
+        queues: queuesOk,
       },
     };
   }
@@ -91,7 +111,11 @@ export class HealthController {
   @Public()
   @Get('ready')
   async ready(): Promise<HealthCheckResponse> {
-    return this.check();
+    const health = await this.check();
+    if (health.status !== 'ok') {
+      throw new ServiceUnavailableException(health);
+    }
+    return health;
   }
 
   /**
@@ -117,6 +141,22 @@ export class HealthController {
   private async checkDatabase(): Promise<boolean> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async checkQueues(): Promise<boolean> {
+    try {
+      await Promise.all(
+        [
+          this.scrapeQueue,
+          this.topicRunQueue,
+          this.emailQueue,
+          this.webhookQueue,
+        ].map((queue) => queue.getJobCounts('waiting', 'active', 'delayed')),
+      );
       return true;
     } catch {
       return false;

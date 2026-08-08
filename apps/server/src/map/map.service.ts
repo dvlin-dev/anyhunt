@@ -10,9 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { SitemapParser } from './sitemap-parser';
 import { BrowserPool } from '../browser/browser-pool';
 import { UrlValidator } from '../common/validators/url.validator';
+import { installPageSsrfGuard } from '../common/utils/playwright-ssrf-guard';
 import type { MapOptions, MapResult } from './dto/map.dto';
-import { BillingService } from '../billing/billing.service';
-import { randomUUID } from 'crypto';
 
 /** 默认最大爬取页面数 */
 const DEFAULT_MAX_CRAWL_PAGES = 100;
@@ -27,7 +26,6 @@ export class MapService {
     private browserPool: BrowserPool,
     private urlValidator: UrlValidator,
     private config: ConfigService,
-    private billingService: BillingService,
   ) {
     this.maxCrawlPages =
       config.get('MAP_MAX_CRAWL_PAGES') || DEFAULT_MAX_CRAWL_PAGES;
@@ -36,7 +34,7 @@ export class MapService {
   /**
    * 映射网站 URL
    */
-  async map(userId: string, options: MapOptions): Promise<MapResult> {
+  async map(options: MapOptions): Promise<MapResult> {
     const {
       url,
       search,
@@ -50,71 +48,51 @@ export class MapService {
       throw new ForbiddenException('URL is not allowed (SSRF protection)');
     }
 
-    const billingKey = 'digest.acquire.map' as const;
-    const referenceId = randomUUID();
-    const billing = await this.billingService.deductOrThrow({
-      userId,
-      billingKey,
-      referenceId,
-    });
-
     const baseUrl = new URL(url);
     const baseHost = baseUrl.hostname;
     const seen = new Set<string>();
     const results: string[] = [];
 
-    try {
-      // 1. 从 sitemap 获取 URL
-      if (!ignoreSitemap) {
-        try {
-          const sitemapUrls = await this.sitemapParser.fetchAndParse(
-            baseUrl.origin,
-          );
-          this.logger.debug(`Found ${sitemapUrls.length} URLs from sitemap`);
+    // 1. 从 sitemap 获取 URL
+    if (!ignoreSitemap) {
+      try {
+        const sitemapUrls = await this.sitemapParser.fetchAndParse(
+          baseUrl.origin,
+        );
+        this.logger.debug(`Found ${sitemapUrls.length} URLs from sitemap`);
 
-          for (const entry of sitemapUrls) {
-            if (results.length >= limit) break;
+        for (const entry of sitemapUrls) {
+          if (results.length >= limit) break;
+          if (
+            this.isValidUrl(entry.url, baseHost, includeSubdomains) &&
+            !seen.has(entry.url) &&
+            (await this.urlValidator.isAllowed(entry.url))
+          ) {
             if (
-              this.isValidUrl(entry.url, baseHost, includeSubdomains) &&
-              !seen.has(entry.url) &&
-              (await this.urlValidator.isAllowed(entry.url))
+              !search ||
+              entry.url.toLowerCase().includes(search.toLowerCase())
             ) {
-              if (
-                !search ||
-                entry.url.toLowerCase().includes(search.toLowerCase())
-              ) {
-                seen.add(entry.url);
-                results.push(entry.url);
-              }
+              seen.add(entry.url);
+              results.push(entry.url);
             }
           }
-        } catch (error) {
-          this.logger.warn(`Failed to parse sitemap: ${error}`);
         }
+      } catch (error) {
+        this.logger.warn(`Failed to parse sitemap: ${error}`);
       }
+    }
 
-      // 2. 如果 sitemap 不够，通过爬取发现更多
-      if (results.length < limit) {
-        const crawledUrls = await this.crawlForUrls(
-          url,
-          limit - results.length,
-          seen,
-          baseHost,
-          includeSubdomains,
-          search,
-        );
-        results.push(...crawledUrls);
-      }
-    } catch (error) {
-      if (billing) {
-        await this.billingService.refundOnFailure({
-          userId,
-          billingKey,
-          referenceId,
-          breakdown: billing.deduct.breakdown,
-        });
-      }
-      throw error;
+    // 2. 如果 sitemap 不够，通过爬取发现更多
+    if (results.length < limit) {
+      const crawledUrls = await this.crawlForUrls(
+        url,
+        limit - results.length,
+        seen,
+        baseHost,
+        includeSubdomains,
+        search,
+      );
+      results.push(...crawledUrls);
     }
 
     return {
@@ -140,6 +118,7 @@ export class MapService {
 
     const context = await this.browserPool.acquireContext();
     const page = await context.newPage();
+    const removeSsrfGuard = await installPageSsrfGuard(page, this.urlValidator);
 
     try {
       let pagesVisited = 0;
@@ -195,6 +174,7 @@ export class MapService {
         }
       }
     } finally {
+      await removeSsrfGuard().catch(() => undefined);
       await page.close().catch(() => {});
       await this.browserPool.releaseContext(context);
     }

@@ -6,6 +6,11 @@ coverage/
 generated/
 playwright-report/
 test-results/
+.artifacts/
+# chrome-use 的状态、截图、视频与报告统一写入此目录。
+.artifacts/acceptance/
+cu-test-artifacts/
+dogfood-output/
 .DS_Store
 .env
 .env.*

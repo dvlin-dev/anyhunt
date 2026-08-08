@@ -8,8 +8,10 @@
 export const ANYHUNT_LLM_SECRET_KEY_ENV = 'ANYHUNT_LLM_SECRET_KEY';
 
 export const DEFAULT_LLM_SETTINGS_ID = 'default' as const;
-export const DEFAULT_LLM_DIGEST_MODEL_ID =
-  process.env.DEFAULT_LLM_DIGEST_MODEL_ID || 'gpt-5.4-mini';
+export const DEFAULT_LLM_AGENT_MODEL_ID =
+  process.env.DEFAULT_LLM_AGENT_MODEL_ID ||
+  process.env.OPENAI_MODEL ||
+  'gpt-5.4-mini';
 
 export const PRESET_LLM_PROVIDERS = [
   {

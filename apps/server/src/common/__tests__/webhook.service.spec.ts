@@ -1,72 +1,92 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { createHmac } from 'crypto';
-import { WebhookService } from '../services/webhook.service';
-import type { ConfigService } from '@nestjs/config';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type Mock,
+} from 'vitest';
+import { createHmac } from 'node:crypto';
 import type { UrlValidator } from '../validators/url.validator';
+import { WebhookService } from '../services/webhook.service';
 
 describe('Common WebhookService', () => {
   let service: WebhookService;
-  let mockConfig: { get: Mock };
-  let mockUrlValidator: { isAllowed: Mock };
+  let validator: { isAllowed: Mock };
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockConfig = {
-      get: vi.fn().mockReturnValue('webhook-secret'),
-    };
-
-    mockUrlValidator = {
-      isAllowed: vi.fn().mockResolvedValue(true),
-    };
-
+    validator = { isAllowed: vi.fn().mockResolvedValue(true) };
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
+      headers: new Headers(),
     } as Response);
-
-    service = new WebhookService(
-      mockConfig as unknown as ConfigService,
-      mockUrlValidator as unknown as UrlValidator,
-    );
+    service = new WebhookService(validator as unknown as UrlValidator);
   });
 
-  it('sends signature for the exact JSON string used as HTTP body', async () => {
-    const payload = {
-      event: 'digest.run.completed',
-      data: { runId: 'run-1' },
-    };
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
 
-    const result = await service.send('https://example.com/webhook', payload);
+  it('signs the exact body and sends a stable idempotency key', async () => {
+    await service.send(
+      'https://example.com/webhook',
+      { event: 'topic.run.completed', data: { runId: 'run-1' } },
+      'subscription-secret',
+      'delivery-1',
+    );
 
-    expect(result).toBe(true);
-
-    const fetchCall = (global.fetch as unknown as Mock).mock.calls[0];
-    const requestInit = fetchCall[1];
+    const requestInit = (global.fetch as unknown as Mock).mock.calls[0][1];
     const bodyString = requestInit.body as string;
     const headers = new Headers(requestInit.headers as HeadersInit);
-    const expectedSignature = createHmac('sha256', 'webhook-secret')
+    const expected = createHmac('sha256', 'subscription-secret')
       .update(bodyString)
       .digest('hex');
-
-    expect(typeof bodyString).toBe('string');
-    expect(headers.get('X-Webhook-Signature')).toBe(expectedSignature);
-    expect(headers.get('X-Webhook-Event')).toBe('digest.run.completed');
-    expect(JSON.parse(bodyString)).toMatchObject({
-      event: payload.event,
-      data: payload.data,
-    });
+    expect(headers.get('X-Anyhunt-Signature')).toBe(`sha256=${expected}`);
+    expect(headers.get('X-Anyhunt-Event')).toBe('topic.run.completed');
+    expect(headers.get('Idempotency-Key')).toBe('delivery-1');
   });
 
-  it('returns false when URL is blocked by SSRF guard', async () => {
-    mockUrlValidator.isAllowed.mockResolvedValue(false);
+  it('revalidates redirect targets and makes an SSRF redirect permanent', async () => {
+    validator.isAllowed
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 302,
+      headers: new Headers({ location: 'http://127.0.0.1/internal' }),
+    } as Response);
 
-    const result = await service.send('http://localhost:3000/hook', {
-      event: 'digest.run.completed',
-      data: { runId: 'run-1' },
+    const result = service.send(
+      'https://example.com/webhook',
+      { event: 'topic.run.completed', data: {} },
+      'subscription-secret',
+      'delivery-1',
+    );
+
+    await expect(result).rejects.toMatchObject({
+      code: 'WEBHOOK_URL_BLOCKED',
+      retryable: false,
     });
+    expect(global.fetch).toHaveBeenCalledOnce();
+  });
 
-    expect(result).toBe(false);
-    expect(global.fetch).not.toHaveBeenCalled();
+  it('allows only the exact explicitly configured local acceptance Sink', async () => {
+    vi.stubEnv(
+      'ANYHUNT_LOCAL_WEBHOOK_SINK_URL',
+      'http://webhook-sink:3000/acceptance',
+    );
+
+    await service.send(
+      'http://webhook-sink:3000/acceptance',
+      { event: 'topic.run.completed', data: {} },
+      'subscription-secret',
+      'delivery-1',
+    );
+
+    expect(validator.isAllowed).not.toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalledOnce();
   });
 });

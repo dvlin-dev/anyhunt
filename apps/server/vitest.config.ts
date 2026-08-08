@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     globals: true,
     root: './',
-    include: ['src/**/*.spec.ts', 'test/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts', 'test/**/*.spec.ts', 'scripts/**/*.spec.ts'],
     exclude: [
       '**/*.render.spec.ts', // 渲染测试默认排除，仅 CI 运行
       ...(shouldRunIntegrationTests
@@ -20,8 +20,12 @@ export default defineConfig({
         : ['**/*.integration.spec.ts', '**/*.e2e.spec.ts']),
     ],
     setupFiles: ['./test/setup.ts'],
-    testTimeout: 30000,
-    hookTimeout: 30000,
+    globalSetup: shouldRunIntegrationTests
+      ? ['./test/integration.global-setup.ts']
+      : [],
+    testTimeout: shouldRunIntegrationTests ? 120_000 : 30_000,
+    hookTimeout: shouldRunIntegrationTests ? 120_000 : 30_000,
+    fileParallelism: !shouldRunIntegrationTests,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
@@ -35,15 +39,12 @@ export default defineConfig({
         'generated/**',
       ],
       thresholds: {
-        // 核心模块 ≥80%
-        'src/screenshot/**': { statements: 80, branches: 80 },
-        'src/quota/**': { statements: 80, branches: 80 },
-        // 其他模块 ≥60%
+        // 1.0 全局基线；关键安全路径由专门的行为测试固定。
         global: { statements: 60, branches: 60 },
       },
     },
-    // 测试隔离：集成测试需要共享容器（Vitest 4.x）
+    // 容器由 globalSetup 共享；测试模块本身保持隔离，防止 mock 串扰。
     pool: 'forks',
-    isolate: false,
+    isolate: true,
   },
 });

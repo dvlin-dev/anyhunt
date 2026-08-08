@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from '@anyhunt/ui';
 import {
-  llmTierOptions,
   type LlmModelFormValues,
   type LlmModelListItem,
   type LlmProviderListItem,
@@ -158,31 +157,6 @@ export function ModelIdentityFields({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <FormField
-          control={form.control}
-          name="minTier"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Minimum tier</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select tier" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {llmTierOptions.map((tier) => (
-                    <SelectItem key={tier.value} value={tier.value}>
-                      {tier.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="sortOrder"

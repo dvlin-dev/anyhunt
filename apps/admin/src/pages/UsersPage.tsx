@@ -1,43 +1,34 @@
 /**
  * [PROPS]: none
- * [EMITS]: none
- * [POS]: Users 页面 - 用户管理（Lucide icons direct render）
+ * [EMITS]: 用户搜索、管理员切换与软删除命令
+ * [POS]: Admin 用户管理页面
  */
+
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { PageHeader } from '@anyhunt/ui';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@anyhunt/ui';
 import {
-  useDeleteUser,
-  UserCreditsSheet,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  PageHeader,
+} from '@anyhunt/ui';
+import {
   UserDeleteDialog,
   UsersListContent,
+  type UserListItem,
+  type UserQuery,
   type UsersContentState,
+  useDeleteUser,
   useUpdateUser,
   useUsers,
 } from '@/features/users';
-import type { UserListItem, UserQuery } from '@/features/users';
 import { usePagedSearchQuery } from '@/lib/usePagedSearchQuery';
 
-function resolveUsersContentState(params: {
-  isLoading: boolean;
-  itemCount: number;
-}): UsersContentState {
-  if (params.isLoading) {
-    return 'loading';
-  }
-
-  if (params.itemCount > 0) {
-    return 'ready';
-  }
-
-  return 'empty';
-}
-
 export default function UsersPage() {
-  const [deleteTargetUser, setDeleteTargetUser] = useState<UserListItem | null>(null);
-  const [creditsTargetUserId, setCreditsTargetUserId] = useState<string | null>(null);
-
+  const [deleteTarget, setDeleteTarget] = useState<UserListItem | null>(null);
   const {
     query,
     searchInput,
@@ -45,73 +36,34 @@ export default function UsersPage() {
     handleSearch,
     handleSearchKeyDown,
     handlePageChange,
-  } = usePagedSearchQuery<UserQuery>({
-    initialQuery: { page: 1, limit: 20 },
-  });
+  } = usePagedSearchQuery<UserQuery>({ initialQuery: { page: 1, limit: 20 } });
+  const users = useUsers(query);
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
 
-  const { data, isLoading } = useUsers(query);
-  const { mutate: updateUser } = useUpdateUser();
-  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
-
-  const handleToggleAdmin = (user: UserListItem) => {
-    updateUser({
-      id: user.id,
-      data: { isAdmin: !user.isAdmin },
-    });
-  };
-
-  const handleDelete = (user: UserListItem) => {
-    setDeleteTargetUser(user);
-  };
-
-  const handleGrantCredits = (user: UserListItem) => {
-    setCreditsTargetUserId(user.id);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deleteTargetUser) {
-      return;
-    }
-
-    deleteUser(deleteTargetUser.id, {
-      onSuccess: () => setDeleteTargetUser(null),
-    });
-  };
-
-  const handleDeleteDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      setDeleteTargetUser(null);
-    }
-  };
-
-  const handleCreditsSheetOpenChange = (open: boolean) => {
-    if (!open) {
-      setCreditsTargetUserId(null);
-    }
-  };
-
-  const usersContentState = resolveUsersContentState({
-    isLoading,
-    itemCount: data?.items.length ?? 0,
-  });
+  const state: UsersContentState = users.isLoading
+    ? 'loading'
+    : (users.data?.items.length ?? 0) > 0
+      ? 'ready'
+      : 'empty';
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Users" description="管理系统用户" />
+      <PageHeader title="Users" description="Manage access and account lifecycle." />
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>用户列表</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>User directory</CardTitle>
             <div className="flex items-center gap-2">
               <Input
-                placeholder="搜索邮箱或名称..."
+                className="w-full sm:w-64"
+                placeholder="Search by email or name"
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(event) => setSearchInput(event.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                className="w-64"
               />
-              <Button variant="outline" onClick={handleSearch}>
+              <Button variant="outline" onClick={handleSearch} aria-label="Search users">
                 <Search className="h-4 w-4" />
               </Button>
             </div>
@@ -119,28 +71,33 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent>
           <UsersListContent
-            state={usersContentState}
-            data={data}
-            onToggleAdmin={handleToggleAdmin}
-            onGrantCredits={handleGrantCredits}
-            onDelete={handleDelete}
+            state={state}
+            data={users.data}
+            onToggleAdmin={(user) =>
+              updateUser.mutate({
+                id: user.id,
+                data: { isAdmin: !user.isAdmin },
+              })
+            }
+            onDelete={setDeleteTarget}
             onPageChange={handlePageChange}
           />
         </CardContent>
       </Card>
 
       <UserDeleteDialog
-        open={deleteTargetUser !== null}
-        user={deleteTargetUser}
-        isDeleting={isDeleting}
-        onOpenChange={handleDeleteDialogOpenChange}
-        onConfirm={handleConfirmDelete}
-      />
-
-      <UserCreditsSheet
-        open={creditsTargetUserId !== null}
-        onOpenChange={handleCreditsSheetOpenChange}
-        userId={creditsTargetUserId}
+        open={deleteTarget !== null}
+        user={deleteTarget}
+        isDeleting={deleteUser.isPending}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteUser.mutate(deleteTarget.id, {
+            onSuccess: () => setDeleteTarget(null),
+          });
+        }}
       />
     </div>
   );

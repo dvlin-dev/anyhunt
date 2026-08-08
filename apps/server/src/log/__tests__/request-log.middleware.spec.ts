@@ -39,8 +39,8 @@ describe('RequestLogMiddleware', () => {
 
     const req = {
       method: 'POST',
-      path: '/api/v1/digest/subscriptions',
-      originalUrl: '/api/v1/digest/subscriptions',
+      path: '/api/v1/app/subscriptions',
+      originalUrl: '/api/v1/app/subscriptions',
       headers: {
         authorization: 'Bearer session-token',
         'x-request-id': 'req_1',
@@ -52,7 +52,6 @@ describe('RequestLogMiddleware', () => {
         id: 'user_1',
         email: 'u@example.com',
         name: null,
-        subscriptionTier: 'FREE',
         isAdmin: false,
       },
       ip: '::ffff:127.0.0.1',
@@ -73,8 +72,8 @@ describe('RequestLogMiddleware', () => {
       expect.objectContaining({
         requestId: 'req_1',
         method: 'POST',
-        path: '/api/v1/digest/subscriptions',
-        routeGroup: 'digest',
+        path: '/api/v1/app/subscriptions',
+        routeGroup: 'subscription',
         statusCode: 429,
         authType: 'session',
         userId: 'user_1',
@@ -94,8 +93,8 @@ describe('RequestLogMiddleware', () => {
 
     const req = {
       method: 'GET',
-      path: '/api/v1/digest/topics',
-      originalUrl: '/api/v1/digest/topics',
+      path: '/api/v1/topics',
+      originalUrl: '/api/v1/topics',
       headers: {},
       ip: '127.0.0.1',
     } as unknown as Request;
@@ -116,7 +115,7 @@ describe('RequestLogMiddleware', () => {
     );
   });
 
-  it('should classify Digest routes with a stable route group', () => {
+  it('should classify Topic routes with a stable route group', () => {
     const writeAsync = vi.fn();
     const middleware = new RequestLogMiddleware({
       writeAsync,
@@ -124,8 +123,8 @@ describe('RequestLogMiddleware', () => {
 
     const req = {
       method: 'POST',
-      path: '/api/v1/digest/inbox',
-      originalUrl: '/api/v1/digest/inbox',
+      path: '/api/v1/app/topics/topic-1/runs',
+      originalUrl: '/api/v1/app/topics/topic-1/runs',
       headers: {},
       ip: '127.0.0.1',
     } as unknown as Request;
@@ -138,8 +137,8 @@ describe('RequestLogMiddleware', () => {
 
     expect(writeAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: '/api/v1/digest/inbox',
-        routeGroup: 'digest',
+        path: '/api/v1/app/topics/topic-1/runs',
+        routeGroup: 'topic',
       }),
     );
   });
@@ -176,8 +175,8 @@ describe('RequestLogMiddleware', () => {
 
     const req = {
       method: 'OPTIONS',
-      path: '/api/v1/digest/subscriptions',
-      originalUrl: '/api/v1/digest/subscriptions',
+      path: '/api/v1/app/subscriptions',
+      originalUrl: '/api/v1/app/subscriptions',
       headers: {},
       ip: '127.0.0.1',
     } as unknown as Request;

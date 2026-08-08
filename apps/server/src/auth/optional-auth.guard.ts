@@ -6,10 +6,14 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthTokensService } from './auth.tokens.service';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {
-  constructor(private readonly tokensService: AuthTokensService) {}
+  constructor(
+    private readonly tokensService: AuthTokensService,
+    private readonly authService: AuthService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -20,6 +24,16 @@ export class OptionalAuthGuard implements CanActivate {
 
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
+      if (!request.headers.cookie) return true;
+      try {
+        const session = await this.authService.getSessionFromRequest(request);
+        if (session) {
+          request.user = session.user;
+          request.session = session.session;
+        }
+      } catch {
+        // Public read stays anonymous when an optional session is invalid.
+      }
       return true;
     }
 

@@ -136,7 +136,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
               href="/"
               className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm text-primary-foreground"
             >
-              Back to Digest
+              Back to home
             </a>
             <button
               type="button"

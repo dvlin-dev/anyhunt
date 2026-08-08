@@ -47,7 +47,10 @@ export default function LogsRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Request Logs" description="统一请求日志明细与错误排查（30 天保留）" />
+      <PageHeader
+        title="Request Logs"
+        description="Inspect request activity and errors retained for 30 days."
+      />
 
       <RequestLogsOverviewCards overview={overview.data} />
 

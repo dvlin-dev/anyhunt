@@ -47,9 +47,6 @@ export class TestContainers {
     process.env.DATABASE_URL = pg.getConnectionUri();
     process.env.REDIS_URL = redis.getConnectionUrl();
 
-    console.log(`[TestContainers] PostgreSQL: ${process.env.DATABASE_URL}`);
-    console.log(`[TestContainers] Redis: ${process.env.REDIS_URL}`);
-
     // 运行 Prisma migrate（使用 migrate deploy 验证迁移一致性）
     await this.runMigrations();
 

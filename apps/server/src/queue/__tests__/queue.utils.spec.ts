@@ -153,11 +153,11 @@ describe('createQueueEvents', () => {
 
   it('should build BullMQ-safe job ids without colons', () => {
     expect(
-      buildBullJobId('digest', 'subscription', 'run', 'subscription-1'),
-    ).toBe('digest-subscription-run-subscription-1');
+      buildBullJobId('topic', 'subscription', 'run', 'subscription-1'),
+    ).toBe('topic-subscription-run-subscription-1');
 
-    expect(buildBullJobId('digest:source', 'refresh:feed', 'source-1')).toBe(
-      'digest-source-refresh-feed-source-1',
+    expect(buildBullJobId('topic:run', 'delivery:email', 'run-1')).toBe(
+      'topic-run-delivery-email-run-1',
     );
   });
 });

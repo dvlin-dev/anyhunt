@@ -58,10 +58,6 @@ export class ActionExecutorHandler {
         await page.keyboard.press(action.key);
         break;
 
-      case 'screenshot':
-        // 截图操作在主流程中处理
-        break;
-
       default:
         throw new Error(`Unknown action type: ${String(action.type)}`);
     }

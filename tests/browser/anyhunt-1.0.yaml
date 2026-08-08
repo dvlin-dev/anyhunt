@@ -1,0 +1,139 @@
+suite: Anyhunt 1.0 local baseline
+
+setup:
+  - open: http://localhost:3001/
+  - wait: { load: networkidle }
+  - eval: |-
+      (async () => {
+        const email = `acceptance-${crypto.randomUUID()}@example.com`;
+        const password = `${crypto.randomUUID()}Aa1!`;
+        const response = await fetch('http://localhost:3000/api/v1/auth/sign-up/email', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: 'Acceptance User', email, password }),
+        });
+        if (!response.ok) throw new Error('Registration failed');
+        location.href = `http://localhost:8025/#acceptance=${encodeURIComponent(email)}`;
+        return true;
+      })()
+  - wait: 500
+  - eval: |-
+      (async () => {
+        const email = decodeURIComponent(location.hash.replace('#acceptance=', ''));
+        let message;
+        for (let attempt = 0; attempt < 20 && !message; attempt += 1) {
+          const list = await fetch('/api/v1/messages').then((response) => response.json());
+          message = list.messages.find((item) =>
+            item.To?.some((recipient) => recipient.Address === email),
+          );
+          if (!message) await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        if (!message) throw new Error('Verification email not found');
+        const detail = await fetch(`/api/v1/message/${encodeURIComponent(message.ID)}`).then(
+          (response) => response.json(),
+        );
+        const otp = detail.Text?.match(/\b\d{6}\b/)?.[0];
+        if (!otp) throw new Error('Verification code not found');
+        window.name = JSON.stringify({ email, otp });
+        location.href = 'http://localhost:3001/';
+        return true;
+      })()
+  - wait: 500
+  - eval: |-
+      (async () => {
+        const pending = JSON.parse(window.name);
+        window.name = '';
+        const response = await fetch(
+          'http://localhost:3000/api/v1/auth/email-otp/verify-email',
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(pending),
+          },
+        );
+        if (!response.ok) throw new Error('Verification failed');
+        const bundle = await response.json();
+        const required = [
+          'accessToken',
+          'accessTokenExpiresAt',
+          'refreshToken',
+          'refreshTokenExpiresAt',
+        ];
+        if (!required.every((key) => typeof bundle[key] === 'string')) {
+          throw new Error('Invalid auth response');
+        }
+        localStorage.setItem(
+          'ah_auth_session',
+          JSON.stringify({
+            state: {
+              user: bundle.user,
+              accessToken: bundle.accessToken,
+              accessTokenExpiresAt: bundle.accessTokenExpiresAt,
+              refreshToken: bundle.refreshToken,
+              refreshTokenExpiresAt: bundle.refreshTokenExpiresAt,
+              lastUpdatedAt: new Date().toISOString(),
+            },
+            version: 1,
+          }),
+        );
+        return true;
+      })()
+  - open: http://localhost:3001/app
+  - wait: 1000
+
+cases:
+  - name: authenticated workspace loads
+    steps:
+      - open: http://localhost:3001/app
+      - wait: 500
+    assert:
+      - url: { equals: http://localhost:3001/app }
+      - text: { sel: 'h1', equals: Topics }
+      - text: { sel: 'main', contains: New Topic }
+      - visible: 'a[href="/app/skills"]'
+      - visible: 'a[href="/app/inbox"]'
+
+  - name: Topic creation entry loads
+    steps:
+      - open: http://localhost:3001/app/topics/new
+      - wait: 500
+    assert:
+      - text: { sel: 'h1', equals: Create a Topic }
+      - visible: 'input[name="title"]'
+      - visible: 'textarea[name="goal"]'
+      - visible: 'button[type="submit"]'
+
+  - name: Skills entry loads
+    steps:
+      - open: http://localhost:3001/app/skills
+      - wait: 500
+    assert:
+      - text: { sel: 'h1', equals: Skills }
+      - visible: 'input[type="url"]'
+      - text: { sel: 'button[type="submit"]', equals: Import }
+
+  - name: Inbox empty state loads
+    steps:
+      - open: http://localhost:3001/app/inbox
+      - wait: 500
+    assert:
+      - text: { sel: 'h1', equals: Inbox }
+      - text: { sel: 'h2', equals: Your Inbox is quiet }
+
+  - name: Admin loads
+    steps:
+      - open: http://localhost:3002/
+      - wait: 500
+    assert:
+      - eval: "document.title === 'Anyhunt Admin'"
+      - text: { sel: 'button[type="submit"]', equals: Sign in }
+      - visible: 'input[type="email"]'
+      - visible: 'input[type="password"]'
+
+  - name: old Billing route is absent
+    steps:
+      - open: http://localhost:3001/billing
+      - wait: 500
+    assert:
+      - text: { sel: 'h1', equals: Page not found }
+      - hidden: 'a[href*="billing" i]'

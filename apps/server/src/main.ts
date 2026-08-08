@@ -89,6 +89,7 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+  app.enableShutdownHooks();
 
   // 全局异常过滤器
   app.useGlobalFilters(new HttpExceptionFilter());

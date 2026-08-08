@@ -13,10 +13,6 @@ import type { JwtOptions } from 'better-auth/plugins/jwt';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import type { JWTPayload } from 'jose';
 import type { PrismaClient } from '../../generated/prisma-main/client';
-import {
-  SubscriptionTier,
-  SubscriptionStatus,
-} from '../../generated/prisma-main/client';
 import { isDisposableEmail } from './email-validator';
 import { REFRESH_TOKEN_TTL_SECONDS, isProduction } from './auth.constants';
 import {
@@ -24,14 +20,6 @@ import {
   getJwtPluginOptions,
   getTrustedOrigins,
 } from './auth.config';
-
-// 套餐对应的月度配额
-const TIER_MONTHLY_QUOTA = {
-  FREE: 100,
-  BASIC: 5000,
-  PRO: 20000,
-  TEAM: 60000,
-} as const;
 
 const DEFAULT_AUTH_RATE_LIMIT_WINDOW_SECONDS = 60;
 const DEFAULT_AUTH_RATE_LIMIT_MAX = 120;
@@ -121,21 +109,6 @@ export function isAdminEmail(
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
   return adminEmails.includes(normalized);
-}
-
-/**
- * 安全地计算一个月后的日期
- */
-function addOneMonth(date: Date): Date {
-  const result = new Date(date);
-  const currentMonth = result.getMonth();
-  result.setMonth(currentMonth + 1);
-
-  if (result.getMonth() > (currentMonth + 1) % 12) {
-    result.setDate(0);
-  }
-
-  return result;
 }
 
 /**
@@ -230,54 +203,14 @@ export function createBetterAuth(
           },
         },
       },
-      // 用户创建后初始化订阅和配额
+      // 用户创建后初始化管理员标记
       user: {
         create: {
           after: async (user: { id: string; email: string }) => {
-            const now = new Date();
-            const periodEnd = addOneMonth(now);
-
-            try {
-              await prisma.$transaction(async (tx) => {
-                // 创建免费订阅
-                await tx.subscription.create({
-                  data: {
-                    userId: user.id,
-                    tier: SubscriptionTier.FREE,
-                    status: SubscriptionStatus.ACTIVE,
-                    currentPeriodStart: now,
-                    currentPeriodEnd: periodEnd,
-                  },
-                });
-
-                // 创建配额
-                await tx.quota.create({
-                  data: {
-                    userId: user.id,
-                    monthlyLimit: TIER_MONTHLY_QUOTA.FREE,
-                    monthlyUsed: 0,
-                    periodStartAt: now,
-                    periodEndAt: periodEnd,
-                  },
-                });
-
-                if (isAdminEmail(user.email, process.env.ADMIN_EMAILS)) {
-                  await tx.user.update({
-                    where: { id: user.id },
-                    data: { isAdmin: true },
-                  });
-                }
-              });
-            } catch (error) {
-              console.error(
-                `[BetterAuth] Failed to initialize user resources for ${user.id}:`,
-                error,
-              );
-              await prisma.user
-                .delete({ where: { id: user.id } })
-                .catch(() => undefined);
-              throw new APIError('INTERNAL_SERVER_ERROR', {
-                message: 'Failed to initialize user resources',
+            if (isAdminEmail(user.email, process.env.ADMIN_EMAILS)) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { isAdmin: true },
               });
             }
           },

@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality and integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate and generate Prisma Client
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+        run: |
+          pnpm --filter @anyhunt/server exec prisma validate --config prisma.main.config.ts
+          pnpm --filter @anyhunt/server prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Integration tests
+        run: RUN_INTEGRATION_TESTS=1 pnpm --filter @anyhunt/server test:integration
+
+      - name: Production build
+        run: pnpm build
+
+  containers:
+    name: Production container builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: quality
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Server image
+        run: docker build --file apps/server/Dockerfile --tag anyhunt-server:ci .
+
+      - name: Build Web image
+        run: docker build --file apps/web/Dockerfile --tag anyhunt-web:ci .
+
+      - name: Build Admin image
+        run: >-
+          docker build --file apps/admin/Dockerfile
+          --build-arg VITE_API_URL=http://localhost:3000
+          --tag anyhunt-admin:ci .

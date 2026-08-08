@@ -110,7 +110,6 @@ describe('AuthTokensService', () => {
       name: 'User',
       isAdmin: false,
       deletedAt: null,
-      subscription: { tier: 'FREE', status: 'ACTIVE' },
     });
 
     const result = await service.verifyAccessToken('good-token');
@@ -132,7 +131,6 @@ describe('AuthTokensService', () => {
         name: 'User',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'FREE', status: 'ACTIVE' },
       },
     };
 
@@ -182,7 +180,6 @@ describe('AuthTokensService', () => {
         name: 'User',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'FREE', status: 'ACTIVE' },
       },
     };
 
@@ -222,7 +219,6 @@ describe('AuthTokensService', () => {
         name: 'Admin',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'FREE', status: 'ACTIVE' },
       },
     };
 

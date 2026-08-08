@@ -53,7 +53,7 @@ export class RequestLogCleanupService {
     const parsed = Number.parseInt(raw, 10);
     if (!Number.isFinite(parsed) || parsed <= 0) {
       this.logger.warn(
-        `Invalid REQUEST_LOG_RETENTION_DAYS=${raw}, fallback to ${REQUEST_LOG_RETENTION_DAYS}`,
+        `Invalid REQUEST_LOG_RETENTION_DAYS, fallback to ${REQUEST_LOG_RETENTION_DAYS}`,
       );
       return REQUEST_LOG_RETENTION_DAYS;
     }

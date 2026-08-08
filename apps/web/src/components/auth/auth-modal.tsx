@@ -8,7 +8,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@anyhunt/ui';
-import { ResponsiveDialog } from '@/components/reader/ResponsiveDialog';
+import { ResponsiveDialog } from './responsive-dialog';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';

@@ -60,11 +60,11 @@ export function useRetryJob() {
   return useMutation({
     mutationFn: ({ name, jobId }: { name: string; jobId: string }) => retryJob(name, jobId),
     onSuccess: () => {
-      toast.success('任务已重新加入队列');
+      toast.success('Job queued for retry');
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
     },
     onError: () => {
-      toast.error('重试失败');
+      toast.error('Failed to retry job');
     },
   });
 }
@@ -75,11 +75,11 @@ export function useRetryAllFailed() {
   return useMutation({
     mutationFn: (name: string) => retryAllFailed(name),
     onSuccess: (data) => {
-      toast.success(`已重试 ${data.retried} 个任务`);
+      toast.success(`Retried ${data.retried ?? 0} jobs`);
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
     },
     onError: () => {
-      toast.error('重试失败');
+      toast.error('Failed to retry jobs');
     },
   });
 }
@@ -91,11 +91,11 @@ export function useCleanQueue() {
     mutationFn: ({ name, status }: { name: string; status: 'completed' | 'failed' }) =>
       cleanQueue(name, status),
     onSuccess: (data) => {
-      toast.success(`已清理 ${data.removed} 个任务`);
+      toast.success(`Removed ${data.removed ?? 0} jobs`);
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
     },
     onError: () => {
-      toast.error('清理失败');
+      toast.error('Failed to clean queue');
     },
   });
 }
@@ -107,11 +107,11 @@ export function usePauseQueue() {
     mutationFn: ({ name, pause }: { name: string; pause: boolean }) =>
       pause ? pauseQueue(name) : resumeQueue(name),
     onSuccess: (data) => {
-      toast.success(data.paused ? '队列已暂停' : '队列已恢复');
+      toast.success(data.paused ? 'Queue paused' : 'Queue resumed');
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
     },
     onError: () => {
-      toast.error('操作失败');
+      toast.error('Failed to update queue');
     },
   });
 }

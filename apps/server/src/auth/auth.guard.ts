@@ -8,16 +8,22 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { AuthTokensService } from './auth.tokens.service';
+import { AuthService } from './auth.service';
 import { IS_PUBLIC_KEY } from './decorators';
+import { getAuthBaseUrl, getTrustedOrigins } from './auth.config';
+import { getRequestOrigin } from './auth.tokens.utils';
+import { matchOrigin } from '../common/utils/origin.utils';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly tokensService: AuthTokensService,
+    private readonly authService: AuthService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -34,18 +40,29 @@ export class AuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
 
-    // 仅支持 Access Token（JWT）
     const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing access token');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const session = await this.tokensService.verifyAccessToken(token);
+      if (!session) {
+        throw new UnauthorizedException('Invalid or expired access token');
+      }
+      request.user = session.user;
+      request.session = session.session;
+      return true;
     }
 
-    const token = authHeader.substring(7);
-    const session = await this.tokensService.verifyAccessToken(token);
+    const session = await this.authService.getSessionFromRequest(request);
     if (!session) {
-      throw new UnauthorizedException('Invalid or expired access token');
+      throw new UnauthorizedException('Authentication required');
     }
-
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())) {
+      const origin = getRequestOrigin(request);
+      const allowed = [getAuthBaseUrl(), ...getTrustedOrigins()];
+      if (!origin || !allowed.some((pattern) => matchOrigin(origin, pattern))) {
+        throw new ForbiddenException('Untrusted request origin');
+      }
+    }
     request.user = session.user;
     request.session = session.session;
     return true;

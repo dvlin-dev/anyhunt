@@ -16,5 +16,7 @@
 - 不得依赖业务模块。
 - 所有用户提供的出站 URL 都必须通过 DNS 感知校验；每次重定向都要重新校验，私有、保留、
   携带凭据或非 HTTP URL 必须失败关闭。
+- Webhook 默认只接受 HTTPS。仅本地 Compose 验收可通过 `ANYHUNT_LOCAL_WEBHOOK_SINK_URL` 放行一个
+  完全相等的内部 HTTP Sink；该路径禁止重定向，未配置时不存在例外。
 - 共享错误码与 Problem Details 属于公开 API 合同；变更必须有明确意图并测试序列化结果。
-- Common 不提供 Tier、Credits 或其他商业化策略；运行保护使用明确的服务级上限。
+- Common 不提供会员、余额或其他商业化策略；运行保护使用明确的服务级上限。

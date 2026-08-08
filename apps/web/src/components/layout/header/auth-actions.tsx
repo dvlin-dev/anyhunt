@@ -20,8 +20,8 @@ function renderDesktopAuthActionsByState({
       return <Skeleton className="h-9 w-20" />;
     case 'authenticated':
       return (
-        <Link to="/">
-          <Button size="sm">Open Digest</Button>
+        <Link to="/app">
+          <Button size="sm">Open Anyhunt</Button>
         </Link>
       );
     case 'guest':
@@ -61,9 +61,9 @@ function renderMobileAuthActionsByState({
       return <Skeleton className="h-9 w-full" />;
     case 'authenticated':
       return (
-        <Link to="/" onClick={onActionCompleted}>
+        <Link to="/app" onClick={onActionCompleted}>
           <Button className="w-full" size="sm">
-            Open Digest
+            Open Anyhunt
           </Button>
         </Link>
       );

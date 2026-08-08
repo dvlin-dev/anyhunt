@@ -10,7 +10,6 @@ import {
   resolveReasoningConfigFromThinkingLevel,
   toThinkingLevelLabel,
 } from '@anyhunt/model-bank';
-import type { SubscriptionTier } from '@/lib/types';
 import { parseLlmCapabilities } from '../utils';
 import type {
   CreateLlmModelInput,
@@ -257,13 +256,6 @@ export function resolveLlmReasoningPreset(input: {
   return resolveReasoningLevelOptions(input);
 }
 
-export const llmTierOptions: Array<{ value: SubscriptionTier; label: string }> = [
-  { value: 'FREE', label: 'FREE' },
-  { value: 'BASIC', label: 'BASIC' },
-  { value: 'PRO', label: 'PRO' },
-  { value: 'TEAM', label: 'TEAM' },
-];
-
 export const llmModelFormSchema = z.object({
   providerId: z.string().trim().min(1).max(50),
   modelId: z.string().trim().min(1).max(200),
@@ -272,7 +264,6 @@ export const llmModelFormSchema = z.object({
   enabled: z.boolean(),
   inputTokenPrice: z.coerce.number().min(0),
   outputTokenPrice: z.coerce.number().min(0),
-  minTier: z.enum(['FREE', 'BASIC', 'PRO', 'TEAM']),
   maxContextTokens: z.coerce.number().int().positive(),
   maxOutputTokens: z.coerce.number().int().positive(),
   capabilities: z.object({
@@ -304,7 +295,6 @@ export function buildLlmModelFormDefaults(params: {
       enabled: true,
       inputTokenPrice: 0,
       outputTokenPrice: 0,
-      minTier: 'FREE',
       maxContextTokens: 128000,
       maxOutputTokens: 4096,
       capabilities: {
@@ -338,7 +328,6 @@ export function buildLlmModelFormDefaults(params: {
     enabled: params.model?.enabled ?? true,
     inputTokenPrice: params.model?.inputTokenPrice ?? 0,
     outputTokenPrice: params.model?.outputTokenPrice ?? 0,
-    minTier: (params.model?.minTier as SubscriptionTier) ?? 'FREE',
     maxContextTokens: params.model?.maxContextTokens ?? parsedCaps.maxContextTokens ?? 128000,
     maxOutputTokens: params.model?.maxOutputTokens ?? parsedCaps.maxOutputTokens ?? 4096,
     capabilities: {
@@ -427,7 +416,6 @@ export function toCreateLlmModelInput(
     enabled: values.enabled,
     inputTokenPrice: values.inputTokenPrice,
     outputTokenPrice: values.outputTokenPrice,
-    minTier: values.minTier as SubscriptionTier,
     maxContextTokens: values.maxContextTokens,
     maxOutputTokens: values.maxOutputTokens,
     capabilities: {
@@ -454,7 +442,6 @@ export function toUpdateLlmModelInput(
     enabled: values.enabled,
     inputTokenPrice: values.inputTokenPrice,
     outputTokenPrice: values.outputTokenPrice,
-    minTier: values.minTier as SubscriptionTier,
     maxContextTokens: values.maxContextTokens,
     maxOutputTokens: values.maxOutputTokens,
     capabilities: {

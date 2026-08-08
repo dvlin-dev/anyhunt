@@ -1,5 +1,5 @@
 /**
- * [INPUT]: requested modelId (optional) for Digest
+ * [INPUT]: optional requested modelId for an Agent run
  * [OUTPUT]: resolved upstream config（provider meta + upstreamModelId + decrypted apiKey）
  * [POS]: LLM 路由的共享解析器：只负责“查库 + 选路由 + 解密密钥”，不创建 SDK/Model 实例
  *
@@ -13,13 +13,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  DEFAULT_LLM_DIGEST_MODEL_ID,
+  DEFAULT_LLM_AGENT_MODEL_ID,
   DEFAULT_LLM_SETTINGS_ID,
 } from './llm.constants';
 import { LlmSecretService } from './llm-secret.service';
 import type { LlmProviderType } from './dto';
 
-export type LlmPurpose = 'digest';
+export type LlmPurpose = 'agent';
 
 type Candidate = {
   upstreamId: string;
@@ -37,7 +37,6 @@ type Candidate = {
     displayName: string;
     inputTokenPrice: number;
     outputTokenPrice: number;
-    minTier: string;
     maxContextTokens: number;
     maxOutputTokens: number;
     capabilitiesJson: unknown;
@@ -57,22 +56,22 @@ export class LlmUpstreamResolverService {
     private readonly secrets: LlmSecretService,
   ) {}
 
-  private async getSettings(): Promise<{ defaultDigestModelId: string }> {
+  private async getSettings(): Promise<{ defaultAgentModelId: string }> {
     return this.prisma.llmSettings.upsert({
       where: { id: DEFAULT_LLM_SETTINGS_ID },
       create: {
         id: DEFAULT_LLM_SETTINGS_ID,
-        defaultDigestModelId: DEFAULT_LLM_DIGEST_MODEL_ID,
+        defaultAgentModelId: DEFAULT_LLM_AGENT_MODEL_ID,
       },
       update: {},
-      select: { defaultDigestModelId: true },
+      select: { defaultAgentModelId: true },
     });
   }
 
   private getDefaultModelIdOrThrow(settings: {
-    defaultDigestModelId: string;
+    defaultAgentModelId: string;
   }): string {
-    return settings.defaultDigestModelId;
+    return settings.defaultAgentModelId;
   }
 
   private async listCandidates(modelId: string): Promise<Candidate[]> {
@@ -89,7 +88,6 @@ export class LlmUpstreamResolverService {
         displayName: true,
         inputTokenPrice: true,
         outputTokenPrice: true,
-        minTier: true,
         maxContextTokens: true,
         maxOutputTokens: true,
         capabilitiesJson: true,
@@ -123,7 +121,6 @@ export class LlmUpstreamResolverService {
         displayName: m.displayName,
         inputTokenPrice: m.inputTokenPrice,
         outputTokenPrice: m.outputTokenPrice,
-        minTier: m.minTier,
         maxContextTokens: m.maxContextTokens,
         maxOutputTokens: m.maxOutputTokens,
         capabilitiesJson: m.capabilitiesJson,
@@ -164,7 +161,6 @@ export class LlmUpstreamResolverService {
       displayName: string;
       inputTokenPrice: number;
       outputTokenPrice: number;
-      minTier: string;
       maxContextTokens: number;
       maxOutputTokens: number;
       capabilitiesJson: unknown;

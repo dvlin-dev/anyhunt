@@ -3,9 +3,10 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '../auth.guard';
 import type { AuthTokensService } from '../auth.tokens.service';
+import type { AuthService } from '../auth.service';
 
 describe('AuthGuard', () => {
   const createContext = (request: Record<string, unknown>) =>
@@ -22,6 +23,7 @@ describe('AuthGuard', () => {
       {
         verifyAccessToken: vi.fn(),
       } as unknown as AuthTokensService,
+      { getSessionFromRequest: vi.fn() } as unknown as AuthService,
       {
         getAllAndOverride: vi.fn().mockReturnValue(true),
       } as any,
@@ -37,6 +39,9 @@ describe('AuthGuard', () => {
       {
         verifyAccessToken: vi.fn(),
       } as unknown as AuthTokensService,
+      {
+        getSessionFromRequest: vi.fn().mockResolvedValue(null),
+      } as unknown as AuthService,
       {
         getAllAndOverride: vi.fn().mockReturnValue(false),
       } as any,
@@ -54,13 +59,13 @@ describe('AuthGuard', () => {
         id: 'user_1',
         email: 'user@example.com',
         name: 'User',
-        subscriptionTier: 'FREE',
         isAdmin: false,
       },
     });
 
     const guard = new AuthGuard(
       { verifyAccessToken } as unknown as AuthTokensService,
+      { getSessionFromRequest: vi.fn() } as unknown as AuthService,
       {
         getAllAndOverride: vi.fn().mockReturnValue(false),
       } as any,
@@ -72,5 +77,46 @@ describe('AuthGuard', () => {
     expect(result).toBe(true);
     expect(request.user?.id).toBe('user_1');
     expect(request.session?.id).toBe('session_1');
+  });
+
+  it('accepts an Admin cookie session only from a trusted origin for writes', async () => {
+    const previousOrigins = process.env.TRUSTED_ORIGINS;
+    process.env.TRUSTED_ORIGINS = 'https://console.anyhunt.app';
+    const session = {
+      session: { id: 'admin-session', expiresAt: new Date() },
+      user: {
+        id: 'admin-1',
+        email: 'admin@example.com',
+        name: 'Admin',
+        isAdmin: true,
+      },
+    };
+    const guard = new AuthGuard(
+      { verifyAccessToken: vi.fn() } as unknown as AuthTokensService,
+      {
+        getSessionFromRequest: vi.fn().mockResolvedValue(session),
+      } as unknown as AuthService,
+      { getAllAndOverride: vi.fn().mockReturnValue(false) } as any,
+    );
+    const request = {
+      method: 'POST',
+      headers: {
+        cookie: 'session=valid',
+        origin: 'https://console.anyhunt.app',
+      },
+    } as any;
+
+    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
+    expect(request.user.isAdmin).toBe(true);
+
+    request.headers.origin = 'https://attacker.example';
+    delete request.user;
+    delete request.session;
+    await expect(guard.canActivate(createContext(request))).rejects.toThrow(
+      ForbiddenException,
+    );
+
+    if (previousOrigins === undefined) delete process.env.TRUSTED_ORIGINS;
+    else process.env.TRUSTED_ORIGINS = previousOrigins;
   });
 });

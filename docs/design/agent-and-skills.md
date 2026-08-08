@@ -1,7 +1,7 @@
 # Anyhunt Agent、Topic 与 Skills 架构
 
 本文是 Anyhunt 1.0 领域模型、Pi Runtime、Tool/MCP 和 Agent Skills 的稳定技术事实源。产品目的
-与范围以[产品目的](product-purpose.md)为准，阶段性迁移和删除路径写在 `docs/plans/*`。
+与范围以[产品目的](product-purpose.md)为准，阶段性重建和删除路径写在 `docs/plans/*`。
 
 ## 架构原则
 
@@ -31,7 +31,7 @@ User + canonicalUrlHash ──> UserItemState
 User ──reports──> TopicReport ──targets──> public Topic
 ```
 
-### 核心闭环的 8 个模型
+### 8 个闭环模型与 1 个治理模型
 
 | 模型            | 唯一职责                       | 关键关系                                |
 | --------------- | ------------------------------ | --------------------------------------- |
@@ -59,7 +59,7 @@ User ──reports──> TopicReport ──targets──> public Topic
 - `FeedbackPattern`：Save/Not Interested 只影响用户自己的 Inbox 状态，不自动改变共享 Topic；
 - `Schedule`：调度字段保存在 Topic，执行由 BullMQ 负责；
 - `Evidence`：运行中使用 Evidence Ledger，最终证据固化在 RunItem；
-- `Billing` / `Quota` / `Payment` / `Redemption`：1.0 不接入商业化；
+- 商业化、余额、会员等级与兑换模型：1.0 不接入；
 - `Workflow` / `Connector` / `Strategy` / `Memory` / 通用 `State`：不属于当前产品。
 
 ## Topic 与 Subscription
@@ -220,7 +220,7 @@ Host 负责：
 - 将内部错误映射为安全、可操作的产品错误。
 
 检查点是 Run 的恢复数据，不演化为通用 State，也不保存隐藏思维过程。Token、工具调用和估算成本
-只用于运行保护与运营观察，不形成 Credits、账单或用户权益。
+只用于运行保护与运营观察，不形成余额、账单或用户权益。
 
 ## Tool 与 MCP
 
@@ -240,13 +240,16 @@ SQL、第三方 API 和新平台以后作为新 Tool 或 MCP Server 接入，不
 
 安全合同：
 
-- `allowed-tools` 只作为兼容提示，不参与授权；
+- Tool 授权只来自 Host 冻结后的注册表，Prompt 或 Skill 中的工具名称不产生权限；
 - Skill、网页正文、模型输出和 MCP 返回内容都视为不可信输入；
 - 所有 URL 工具在初始请求和每次重定向时复用共享 SSRF Guard；
 - 工具结果有字符数、条目数和媒体类型上限；
 - 具有副作用的工具必须单独授权并具备幂等键；
 - 1.0 不向 Agent 暴露任意 Shell、文件系统或 SQL 写入；
 - MCP Server 仅由服务端运营配置，连接参数保存在部署密钥中。
+
+Webhook 默认只允许 HTTPS，并在初始请求和重定向上执行 SSRF Guard。本地 Compose 验收可以显式配置
+一个完全相等的内部 HTTP Sink URL；该例外不接受前缀、同主机其他路径或重定向，未配置时不生效。
 
 ## Digest 提交与可靠性
 
@@ -256,21 +259,32 @@ Agent 必须通过 `submit_digest` 提交结构化结果。Host 验证每个 URL
 
 - Topic Scheduler Job、Run Job、`submit_digest` 和 Delivery Job 都必须幂等；
 - 取消请求设置持久化标记并触发 AbortSignal；
+- Owner 可从活动 Topic 或私有 Run 页面停止当前 Run；公开 Run 页面不暴露控制操作；
 - 进程中断后从最近完整模型/工具边界恢复，不重放已完成副作用；
 - 已提交 Run 只恢复 Delivery，不再次运行 Agent；
 - Managed Skill 更新失败不回滚有效 Digest，并保留上一版本；
 - 日志只包含 ID、模型、工具名、计数、耗时和脱敏错误；
 - 指标覆盖成功率、取消率、恢复率、工具错误、证据拒绝、Token、估算成本和投递延迟。
 
-## 旧模型迁移原则
+## 当前模块边界
 
-1. 将每个现有私有 DigestSubscription 转换为 Topic，并为原用户建立 Subscription；
-2. 将公开 DigestTopic 与其 sourceSubscription 合并为一个 PUBLIC Topic，Followers 转为 Subscription；
-3. 将 DigestRun 迁移为 Topic Run，将没有对应 Run 的历史 Edition 转为只读成功 Run；
-4. 将旧 Source 配置转换为 Topic Managed Skill 的来源与查询经验；
-5. 将 RunItem/EditionItem 快照合并为新 RunItem，并保留用户已读、收藏和不感兴趣状态；
-6. 验证数量、归属和公开页面后删除 Edition、Content、Source、Score 和 Feedback Pattern；
-7. 删除 Billing、Quota、Payment、Redemption、会员等级、Credits 及其 Server/Admin/Web 配置；
-8. 删除迁移脚本、双读、feature flag 和旧 AI SDK Agent 路径。
+```text
+apps/server/src/
+├── agent/          # Runtime-neutral 合同、Pi Adapter、Runner、Tool/MCP、Skills
+├── topic/          # Topic、共享 Run、调度和 Owner 命令
+├── subscription/   # 关注关系与投递偏好
+├── inbox/          # 无表查询与 UserItemState
+├── delivery/       # Email/Webhook 幂等投递
+├── auth user admin llm
+└── search map scraper browser  # Agent 内部采集能力
+```
 
-生产数据无法安全转换时必须阻止删除门禁，不猜测、不静默丢弃。
+- `agent` 不拥有 Topic、Subscription 或 Delivery；
+- `topic` 不实现 Provider、采集或投递；
+- `subscription` 不保存研究目标、Tool、Skill、模型或调度；
+- `inbox` 不建立领域表；
+- `delivery` 不生成研究内容；
+- 采集模块不依赖产品领域；
+- Web/Admin 只通过函数式 API Client 访问 Server。
+
+安装、验证与部署入口见根 `README.md`；阶段性计划不得成为稳定架构的重复事实源。

@@ -1,102 +1,37 @@
 /**
- * User Service
- * 用户相关业务逻辑
+ * [INPUT]: 用户身份与资料修改命令
+ * [OUTPUT]: 用户资料或账号生命周期结果
+ * [POS]: 用户资料、密码与账号删除服务
  */
 
+import { createHash } from 'node:crypto';
 import {
-  Injectable,
   BadRequestException,
+  Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import { PrismaService } from '../prisma';
 import type {
-  User,
-  Subscription,
-  Quota,
-} from '../../generated/prisma-main/client';
-import { QuotaService } from '../quota/quota.service';
-import type {
+  ChangePasswordDto,
   DeleteAccountDto,
   UpdateProfileDto,
-  ChangePasswordDto,
 } from './dto';
-import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
-
-/** 用户查询结果类型 */
-type UserWithRelations = User & {
-  subscription: Subscription | null;
-  quota: Quota | null;
-};
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly quotaService: QuotaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * 格式化用户资料响应
-   */
-  private formatUserProfile(user: UserWithRelations) {
-    const effectiveTier = getEffectiveSubscriptionTier(
-      user.subscription
-        ? { tier: user.subscription.tier, status: user.subscription.status }
-        : null,
-      'FREE',
-    );
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      subscriptionTier: effectiveTier,
-      isAdmin: user.isAdmin,
-      createdAt: user.createdAt,
-    };
-  }
-
-  /**
-   * 构建带 quota 的用户资料（SRP：统一 quota 组装）
-   */
-  private async buildProfileWithQuota(user: UserWithRelations) {
-    const subscriptionTier = getEffectiveSubscriptionTier(
-      user.subscription
-        ? { tier: user.subscription.tier, status: user.subscription.status }
-        : null,
-      'FREE',
-    );
-    await this.quotaService.ensureExists(user.id, subscriptionTier);
-    const quota = await this.quotaService.getStatus(user.id);
-
-    return {
-      ...this.formatUserProfile(user),
-      quota: {
-        dailyLimit: quota.daily.limit,
-        dailyUsed: quota.daily.used,
-        dailyRemaining: quota.daily.remaining,
-        dailyResetsAt: quota.daily.resetsAt,
-        monthlyLimit: quota.monthly.limit,
-        monthlyUsed: quota.monthly.used,
-        monthlyRemaining: quota.monthly.remaining,
-        purchasedQuota: quota.purchased,
-        periodStartsAt: quota.periodStartsAt,
-        periodEndAt: quota.periodEndsAt,
-        totalRemaining: quota.totalRemaining,
-      },
-    };
-  }
-
-  /**
-   * 获取用户信息（含订阅和配额）
-   */
   async getUserProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        subscription: true,
-        quota: true,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isAdmin: true,
+        createdAt: true,
       },
     });
 
@@ -104,42 +39,32 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return this.buildProfileWithQuota(user);
+    return user;
   }
 
-  /**
-   * 更新用户资料
-   */
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const user = await this.prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
       data: { name: dto.name },
-      include: {
-        subscription: true,
-        quota: true,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isAdmin: true,
+        createdAt: true,
       },
     });
-
-    return this.buildProfileWithQuota(user);
   }
 
-  /**
-   * 修改密码
-   */
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
-    // 获取用户的 credential account
     const account = await this.prisma.account.findFirst({
-      where: {
-        userId,
-        providerId: 'credential',
-      },
+      where: { userId, providerId: 'credential' },
     });
 
     if (!account?.password) {
       throw new BadRequestException('Password authentication not enabled');
     }
 
-    // 验证当前密码
     const isValid = await verifyPassword({
       password: dto.currentPassword,
       hash: account.password,
@@ -149,63 +74,57 @@ export class UserService {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
-    // Hash 新密码并更新
-    const hashedPassword = await hashPassword(dto.newPassword);
-
     await this.prisma.account.update({
       where: { id: account.id },
-      data: { password: hashedPassword },
+      data: { password: await hashPassword(dto.newPassword) },
     });
   }
 
-  /**
-   * 删除账户（软删除）
-   */
   async deleteAccount(userId: string, dto: DeleteAccountDto): Promise<void> {
-    // 1. 获取用户信息
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    if (user.deletedAt) {
-      throw new BadRequestException('Account has been deleted');
-    }
-
-    // 2. 验证确认文字（必须输入邮箱）
     if (dto.confirmation !== user.email) {
       throw new BadRequestException('Confirmation email does not match');
     }
 
-    // 3. 事务处理
     await this.prisma.$transaction(async (tx) => {
-      // 3.1 记录删除原因
       await tx.accountDeletionRecord.create({
         data: {
-          userId: user.id,
-          email: user.email,
+          userIdHash: this.hashDeletionIdentity(user.id),
+          emailHash: this.hashDeletionIdentity(user.email.trim().toLowerCase()),
           reason: dto.reason,
           feedback: dto.feedback,
         },
       });
-
-      // 3.2 软删除用户
-      await tx.user.update({
-        where: { id: userId },
-        data: { deletedAt: new Date() },
-      });
-
-      // 3.3 清除所有 Session（使所有设备登出）
-      await tx.session.deleteMany({
+      await tx.requestLog.updateMany({
         where: { userId },
+        data: {
+          userId: null,
+          clientIp: 'anonymized',
+          forwardedFor: null,
+          origin: null,
+          referer: null,
+          userAgent: null,
+        },
       });
+      await tx.adminAuditLog.updateMany({
+        where: { targetUserId: userId },
+        data: { targetUserId: null },
+      });
+      await tx.adminAuditLog.updateMany({
+        where: { actorUserId: userId },
+        data: { actorUserId: 'deleted-user' },
+      });
+      // User-owned Topics/Skills and all personal relations are removed by
+      // explicit database cascades from this single hard-delete boundary.
+      await tx.user.delete({ where: { id: userId } });
     });
+  }
 
-    console.log(
-      `[UserService] User ${userId} deleted account, reason: ${dto.reason}`,
-    );
+  private hashDeletionIdentity(value: string): string {
+    return createHash('sha256').update(value, 'utf8').digest('hex');
   }
 }

@@ -1,31 +1,30 @@
 /**
- * [DEFINES]: Admin DTO schemas/types
- * [USED_BY]: admin controllers
- * [POS]: Admin API DTO 入口
+ * [DEFINES]: Admin 用户与队列查询 DTO
+ * [USED_BY]: Admin controllers
+ * [POS]: Admin API 的 Zod 合同入口
  */
 
 import { z } from 'zod';
 
-// =============================================
-// Pagination
-// =============================================
-
-export const paginationQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  search: z.string().optional(),
-});
+export const paginationQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    search: z.string().trim().min(1).max(200).optional(),
+  })
+  .strict();
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
-// =============================================
-// Users
-// =============================================
-
-export const updateUserSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  isAdmin: z.boolean().optional(),
-});
+export const updateUserSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100).optional(),
+    isAdmin: z.boolean().optional(),
+  })
+  .strict()
+  .refine((value) => value.name !== undefined || value.isAdmin !== undefined, {
+    message: 'At least one field is required',
+  });
 
 export type UpdateUserDto = z.infer<typeof updateUserSchema>;
 
@@ -33,88 +32,12 @@ export const userQuerySchema = paginationQuerySchema.extend({
   isAdmin: z
     .enum(['true', 'false'])
     .optional()
-    .transform((val) =>
-      val === 'true' ? true : val === 'false' ? false : undefined,
+    .transform((value) =>
+      value === 'true' ? true : value === 'false' ? false : undefined,
     ),
 });
 
 export type UserQuery = z.infer<typeof userQuerySchema>;
-
-// =============================================
-// Subscriptions
-// =============================================
-
-export const subscriptionQuerySchema = paginationQuerySchema.extend({
-  tier: z.enum(['FREE', 'BASIC', 'PRO', 'TEAM']).optional(),
-  status: z.enum(['ACTIVE', 'CANCELED', 'PAST_DUE', 'EXPIRED']).optional(),
-});
-
-export type SubscriptionQuery = z.infer<typeof subscriptionQuerySchema>;
-
-export const updateSubscriptionSchema = z.object({
-  tier: z.enum(['FREE', 'BASIC', 'PRO', 'TEAM']).optional(),
-  status: z.enum(['ACTIVE', 'CANCELED', 'PAST_DUE', 'EXPIRED']).optional(),
-});
-
-export type UpdateSubscriptionDto = z.infer<typeof updateSubscriptionSchema>;
-
-// =============================================
-// Orders
-// =============================================
-
-export const orderQuerySchema = paginationQuerySchema.extend({
-  status: z.enum(['pending', 'completed', 'failed', 'refunded']).optional(),
-  type: z.enum(['subscription', 'quota_purchase']).optional(),
-});
-
-export type OrderQuery = z.infer<typeof orderQuerySchema>;
-
-// =============================================
-// Jobs (ScrapeJob)
-// =============================================
-
-export const jobsQuerySchema = paginationQuerySchema.extend({
-  status: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED']).optional(),
-  errorCode: z
-    .enum([
-      'PAGE_TIMEOUT',
-      'URL_NOT_ALLOWED',
-      'SELECTOR_NOT_FOUND',
-      'BROWSER_ERROR',
-      'NETWORK_ERROR',
-      'RATE_LIMITED',
-      'QUOTA_EXCEEDED',
-      'INVALID_URL',
-      'PAGE_NOT_FOUND',
-      'ACCESS_DENIED',
-    ])
-    .optional(),
-  userId: z.string().optional(),
-  dateFrom: z.string().optional(),
-  dateTo: z.string().optional(),
-});
-
-export type JobsQuery = z.infer<typeof jobsQuerySchema>;
-
-export const errorStatsQuerySchema = z.object({
-  days: z.coerce.number().int().min(1).max(90).default(7),
-});
-
-export type ErrorStatsQuery = z.infer<typeof errorStatsQuerySchema>;
-
-export const cleanupStaleJobsSchema = z.object({
-  maxAgeMinutes: z.coerce.number().int().min(5).max(1440).default(30),
-  dryRun: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform((val) => val === 'true'),
-});
-
-export type CleanupStaleJobsQuery = z.infer<typeof cleanupStaleJobsSchema>;
-
-// =============================================
-// Queues
-// =============================================
 
 export const queueJobsQuerySchema = paginationQuerySchema
   .omit({ search: true })
@@ -126,29 +49,10 @@ export const queueJobsQuerySchema = paginationQuerySchema
 
 export type QueueJobsQuery = z.infer<typeof queueJobsQuerySchema>;
 
-export const cleanQueueSchema = z.object({
-  status: z.enum(['completed', 'failed']).default('completed'),
-});
+export const cleanQueueSchema = z
+  .object({
+    status: z.enum(['completed', 'failed']).default('completed'),
+  })
+  .strict();
 
 export type CleanQueueDto = z.infer<typeof cleanQueueSchema>;
-
-// =============================================
-// Credits (Internal Testing)
-// =============================================
-
-export const grantCreditsSchema = z.object({
-  amount: z.coerce.number().int().min(1).max(1_000_000),
-  reason: z.string().min(1).max(500),
-});
-
-export type GrantCreditsDto = z.infer<typeof grantCreditsSchema>;
-
-export const creditsGrantsQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-});
-
-export type CreditsGrantsQuery = z.infer<typeof creditsGrantsQuerySchema>;
-
-// =============================================
-// Digest Topics
-// =============================================

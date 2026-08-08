@@ -4,8 +4,6 @@ import Redis from 'ioredis';
 
 // 缓存 Key 前缀
 const CACHE_PREFIX = {
-  SCREENSHOT: 'ss:cache:', // requestHash -> screenshotId
-  PROCESSING: 'ss:proc:', // 正在处理中的任务
   RATE_LIMIT: 'rl:', // 频率限制
   CONCURRENT: 'cc:', // 并发计数
 } as const;
@@ -104,65 +102,6 @@ export class RedisService implements OnModuleDestroy {
       const result = await this.redis.setnx(key, value);
       return result === 1;
     }
-  }
-
-  // ==================== 截图缓存 ====================
-
-  /**
-   * 获取截图缓存
-   * @param requestHash 请求哈希
-   * @returns screenshotId 或 null
-   */
-  async getScreenshotCache(requestHash: string): Promise<string | null> {
-    return this.redis.get(`${CACHE_PREFIX.SCREENSHOT}${requestHash}`);
-  }
-
-  /**
-   * 设置截图缓存
-   * @param requestHash 请求哈希
-   * @param screenshotId 截图 ID
-   * @param ttlSeconds 缓存时间（秒）
-   */
-  async setScreenshotCache(
-    requestHash: string,
-    screenshotId: string,
-    ttlSeconds: number,
-  ): Promise<void> {
-    await this.redis.setex(
-      `${CACHE_PREFIX.SCREENSHOT}${requestHash}`,
-      ttlSeconds,
-      screenshotId,
-    );
-  }
-
-  // ==================== 并发控制 ====================
-
-  /**
-   * 尝试获取处理锁
-   * @param requestHash 请求哈希
-   * @param screenshotId 截图 ID（正在处理的任务）
-   * @param ttlSeconds 锁超时时间
-   * @returns 如果获取成功返回 null，否则返回正在处理的 screenshotId
-   */
-  async tryAcquireProcessingLock(
-    requestHash: string,
-    screenshotId: string,
-    ttlSeconds: number = 120,
-  ): Promise<string | null> {
-    const key = `${CACHE_PREFIX.PROCESSING}${requestHash}`;
-    const acquired = await this.setnx(key, screenshotId, ttlSeconds);
-    if (acquired) {
-      return null; // 成功获取锁
-    }
-    // 返回正在处理的 screenshotId
-    return this.redis.get(key);
-  }
-
-  /**
-   * 释放处理锁
-   */
-  async releaseProcessingLock(requestHash: string): Promise<void> {
-    await this.redis.del(`${CACHE_PREFIX.PROCESSING}${requestHash}`);
   }
 
   // ==================== 并发计数 ====================

@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
-import { SCRAPE_QUEUE } from './queue.constants';
+import {
+  EMAIL_DELIVERY_QUEUE,
+  SCRAPE_QUEUE,
+  TOPIC_RUN_QUEUE,
+  WEBHOOK_DELIVERY_QUEUE,
+} from './queue.constants';
 import { parseRedisUrl } from './queue.utils';
 
 @Module({
@@ -30,6 +35,15 @@ import { parseRedisUrl } from './queue.utils';
     }),
     BullModule.registerQueue({
       name: SCRAPE_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: TOPIC_RUN_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: EMAIL_DELIVERY_QUEUE,
+    }),
+    BullModule.registerQueue({
+      name: WEBHOOK_DELIVERY_QUEUE,
     }),
   ],
   exports: [BullModule],

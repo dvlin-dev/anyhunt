@@ -22,8 +22,6 @@ describe('PageConfigHandler', () => {
       timeout: 30000,
       mobile: false,
       darkMode: false,
-      sync: false,
-      syncTimeout: 120000,
       device: 'mobile',
       headers: {
         Authorization: 'Bearer token',
@@ -55,8 +53,6 @@ describe('PageConfigHandler', () => {
       timeout: 30000,
       mobile: false,
       darkMode: false,
-      sync: false,
-      syncTimeout: 120000,
       device: 'mobile',
       headers: {
         'User-Agent': 'CustomAgent/1.0',

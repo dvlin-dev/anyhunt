@@ -27,7 +27,7 @@ export interface SearchResult {
  */
 export interface SearXNGResponse {
   query: string;
-  number_of_results: number;
+  number_of_results?: number;
   results: SearXNGResult[];
   suggestions?: string[];
   infoboxes?: unknown[];

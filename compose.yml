@@ -1,0 +1,184 @@
+name: anyhunt-local
+
+x-server-environment: &server-environment
+  NODE_ENV: production
+  DATABASE_URL: postgresql://anyhunt:anyhunt-local@postgres:5432/anyhunt
+  REDIS_URL: redis://redis:6379
+  BETTER_AUTH_SECRET: anyhunt-local-auth-secret-at-least-32-characters
+  BETTER_AUTH_URL: http://localhost:3000
+  TRUSTED_ORIGINS: http://localhost:3001,http://localhost:3002
+  ANYHUNT_WWW_URL: http://localhost:3001
+  ANYHUNT_LLM_SECRET_KEY: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+  ANYHUNT_DATA_SECRET_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
+  SEARXNG_URL: http://searxng:8080
+  SMTP_URL: smtp://mailpit:1025
+  ANYHUNT_LOCAL_WEBHOOK_SINK_URL: http://webhook-sink:3000/acceptance
+  EMAIL_FROM: Anyhunt Local <hello@anyhunt.local>
+  ADMIN_EMAILS: admin@anyhunt.local
+  BROWSER_POOL_SIZE: '1'
+  BROWSER_WARMUP_COUNT: '0'
+
+x-server-image: &server-image
+  image: anyhunt/server:local
+
+x-server-build: &server-build
+  context: .
+  dockerfile: apps/server/Dockerfile
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: anyhunt
+      POSTGRES_USER: anyhunt
+      POSTGRES_PASSWORD: anyhunt-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U anyhunt -d anyhunt]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+    restart: unless-stopped
+    command: [redis-server, --appendonly, 'yes', --save, '60', '1']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 3s
+
+  searxng:
+    image: anyhunt/searxng:local
+    build:
+      context: ./compose/searxng
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_SECRET: anyhunt-local-searxng-secret
+    healthcheck:
+      test: [CMD-SHELL, wget -q -O /dev/null http://127.0.0.1:8080/]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:v1.30.6@sha256:7f33095f80e901f6ad08028f06ca284aa58fe84942be5496008d041d3b9f4d4d
+    restart: unless-stopped
+    command: [--disable-version-check, --max, '100', --max-age, 1d]
+    ports:
+      - 127.0.0.1:8025:8025
+    healthcheck:
+      test: [CMD-SHELL, wget -q -O /dev/null http://127.0.0.1:8025/readyz]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 3s
+
+  webhook-sink:
+    image: anyhunt/webhook-sink:local
+    build:
+      context: ./compose/webhook-sink
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3003:3000
+
+  migrate:
+    <<: *server-image
+    restart: no
+    environment:
+      DATABASE_URL: postgresql://anyhunt:anyhunt-local@postgres:5432/anyhunt
+    command: [npx, prisma, migrate, deploy, --config, prisma.main.config.ts]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed-provider:
+    <<: *server-image
+    restart: no
+    environment:
+      DATABASE_URL: postgresql://anyhunt:anyhunt-local@postgres:5432/anyhunt
+      ANYHUNT_LLM_SECRET_KEY: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY is required}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:?OPENAI_BASE_URL is required}
+      OPENAI_MODEL: ${OPENAI_MODEL:?OPENAI_MODEL is required}
+    command: [node, dist/scripts/seed-local-provider.js]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  server:
+    <<: *server-image
+    build: *server-build
+    restart: unless-stopped
+    environment: *server-environment
+    ports:
+      - 127.0.0.1:3000:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      searxng:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+      webhook-sink:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed-provider:
+        condition: service_completed_successfully
+
+  web:
+    image: anyhunt/web:local
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3001:3000
+    depends_on:
+      server:
+        condition: service_healthy
+
+  admin:
+    image: anyhunt/admin:local
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3002:8080
+    depends_on:
+      server:
+        condition: service_healthy
+
+  smoke:
+    <<: *server-image
+    profiles: [smoke]
+    restart: no
+    environment:
+      <<: *server-environment
+    command: [node, dist/scripts/local-smoke.js]
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:

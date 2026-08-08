@@ -16,7 +16,10 @@ import { RequestLogService } from './request-log.service';
 
 const ROUTE_GROUP_PREFIXES: Array<{ prefix: string; group: string }> = [
   { prefix: '/api/v1/admin/', group: 'admin' },
-  { prefix: '/api/v1/digest/', group: 'digest' },
+  { prefix: '/api/v1/app/topics', group: 'topic' },
+  { prefix: '/api/v1/topics', group: 'topic' },
+  { prefix: '/api/v1/app/subscriptions', group: 'subscription' },
+  { prefix: '/api/v1/app/inbox', group: 'inbox' },
   { prefix: '/api/v1/user', group: 'user' },
   { prefix: '/api/v1/app/user', group: 'app-user' },
   { prefix: '/api/auth/', group: 'auth' },

@@ -1,7 +1,7 @@
 /**
  * [PROPS]: None
- * [EMITS]: Reader navigation and authentication actions
- * [POS]: Anyhunt public topic navigation
+ * [EMITS]: Home navigation and authentication actions
+ * [POS]: Anyhunt global navigation
  */
 
 import { useState } from 'react';
@@ -37,32 +37,18 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const MobileMenuIcon = mobileMenuOpen ? X : Menu;
 
-  const navLinks = [
-    { to: '/explore' as const, label: 'Explore' },
-    { to: '/topics' as const, label: 'Topics' },
-  ];
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-16 items-center justify-between">
-          <Link to="/welcome" className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tight">ANYHUNT</span>
+          <Link to="/" className="flex items-center gap-2">
+            <span className="font-mono text-lg font-semibold tracking-[0.16em]">ANYHUNT</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
-            {navLinks.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
           <div className="hidden items-center gap-3 md:flex">
+            <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground">
+              Explore
+            </Link>
             <DesktopHeaderAuthActions
               viewState={authViewState}
               onSignIn={() => openAuthModal({ mode: 'login' })}
@@ -81,16 +67,13 @@ export function Header() {
 
         {mobileMenuOpen && (
           <div className="space-y-1 border-t border-border py-3 md:hidden">
-            {navLinks.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted"
-              >
-                {item.label}
-              </Link>
-            ))}
+            <Link
+              to="/explore"
+              className="block rounded-lg px-3 py-2 text-sm hover:bg-muted"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Explore
+            </Link>
             <div className="px-3 pt-2">
               <DesktopHeaderAuthActions
                 viewState={authViewState}

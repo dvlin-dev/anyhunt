@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -99,8 +99,8 @@ export function LlmProviderDialog({ viewModel, actions }: LlmProviderDialogProps
     }
   }, [defaults, form, open]);
 
-  const watchedProviderType = form.watch('providerType');
-  const watchedApiKey = form.watch('apiKey');
+  const watchedProviderType = useWatch({ control: form.control, name: 'providerType' });
+  const watchedApiKey = useWatch({ control: form.control, name: 'apiKey' });
   const selectedPreset = useMemo(
     () => availablePresets.find((preset) => preset.id === watchedProviderType),
     [availablePresets, watchedProviderType]

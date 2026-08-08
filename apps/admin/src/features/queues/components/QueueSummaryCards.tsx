@@ -21,19 +21,19 @@ export function QueueSummaryCards({ summary }: QueueSummaryCardsProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="text-3xl font-bold text-yellow-600">{summary.totalWaiting}</div>
-          <p className="text-sm text-muted-foreground">总等待任务</p>
+          <p className="text-sm text-muted-foreground">Waiting jobs</p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-6">
           <div className="text-3xl font-bold text-blue-600">{summary.totalActive}</div>
-          <p className="text-sm text-muted-foreground">正在处理</p>
+          <p className="text-sm text-muted-foreground">Active jobs</p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-6">
           <div className="text-3xl font-bold text-red-600">{summary.totalFailed}</div>
-          <p className="text-sm text-muted-foreground">失败任务</p>
+          <p className="text-sm text-muted-foreground">Failed jobs</p>
         </CardContent>
       </Card>
     </div>

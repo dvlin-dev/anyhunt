@@ -77,9 +77,9 @@ export class RequestLogService {
       }),
     );
 
-    void this.prisma.requestLog.create({ data }).catch((error: unknown) => {
+    void this.prisma.requestLog.create({ data }).catch(() => {
       this.logger.error(
-        `Failed to persist request log: ${error instanceof Error ? error.message : String(error)}`,
+        JSON.stringify({ event: 'request_log_persist_failed' }),
       );
     });
   }

@@ -32,7 +32,7 @@ describe('RequestLogService', () => {
   it('should persist request log asynchronously', async () => {
     service.writeAsync({
       method: 'get',
-      path: '/api/v1/digest/subscriptions',
+      path: '/api/v1/app/subscriptions',
       statusCode: 200,
       durationMs: 123,
       clientIp: '127.0.0.1',
@@ -45,7 +45,7 @@ describe('RequestLogService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           method: 'GET',
-          path: '/api/v1/digest/subscriptions',
+          path: '/api/v1/app/subscriptions',
           statusCode: 200,
           durationMs: 123,
           clientIp: '127.0.0.1',
@@ -63,8 +63,8 @@ describe('RequestLogService', () => {
         createdAt,
         requestId: 'req_1',
         method: 'GET',
-        path: '/api/v1/digest/subscriptions',
-        routeGroup: 'digest',
+        path: '/api/v1/app/subscriptions',
+        routeGroup: 'subscription',
         statusCode: 200,
         durationMs: 12,
         authType: 'session',
@@ -133,7 +133,7 @@ describe('RequestLogService', () => {
       .mockResolvedValueOnce([{ p95DurationMs: 456 }])
       .mockResolvedValueOnce([
         {
-          routeGroup: 'digest',
+          routeGroup: 'topic',
           requestCount: 70,
           errorCount: 14,
           avgDurationMs: 120,
@@ -151,7 +151,7 @@ describe('RequestLogService', () => {
     expect(result.errorRate).toBe(0.2);
     expect(result.p95DurationMs).toBe(456);
     expect(result.topRoutes[0]).toMatchObject({
-      routeGroup: 'digest',
+      routeGroup: 'topic',
       requestCount: 70,
       errorCount: 14,
     });

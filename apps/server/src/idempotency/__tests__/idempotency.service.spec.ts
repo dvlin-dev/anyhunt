@@ -32,10 +32,10 @@ describe('IdempotencyService', () => {
     prisma.idempotencyRecord.create.mockResolvedValue({ id: 'idr_1' });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
     });
@@ -50,17 +50,17 @@ describe('IdempotencyService', () => {
       expiresAt: new Date(Date.now() + 60_000),
       status: 'COMPLETED',
       responseStatus: 201,
-      responseBody: { id: 'memory_1' },
-      resourceType: 'memory',
-      resourceId: 'memory_1',
+      responseBody: { id: 'topic-1' },
+      resourceType: 'topic',
+      resourceId: 'topic-1',
       errorCode: null,
     });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
     });
@@ -68,9 +68,9 @@ describe('IdempotencyService', () => {
     expect(result).toEqual({
       kind: 'replay',
       responseStatus: 201,
-      responseBody: { id: 'memory_1' },
-      resourceType: 'memory',
-      resourceId: 'memory_1',
+      responseBody: { id: 'topic-1' },
+      resourceType: 'topic',
+      resourceId: 'topic-1',
       errorCode: null,
     });
   });
@@ -84,10 +84,10 @@ describe('IdempotencyService', () => {
     });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
     });
@@ -105,10 +105,10 @@ describe('IdempotencyService', () => {
 
     await expect(
       service.begin({
-        scope: 'apiKey:key_1',
+        scope: 'topics:create:user-1',
         idempotencyKey: 'idem_1',
         method: 'POST',
-        path: '/api/v1/memories',
+        path: '/api/v1/app/topics',
         requestHash: 'hash_new',
         ttlSeconds: 60,
       }),
@@ -125,10 +125,10 @@ describe('IdempotencyService', () => {
     prisma.idempotencyRecord.update.mockResolvedValue({ id: 'idr_1' });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
     });
@@ -147,10 +147,10 @@ describe('IdempotencyService', () => {
     prisma.idempotencyRecord.update.mockResolvedValue({ id: 'idr_1' });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_new',
       ttlSeconds: 60,
     });
@@ -178,10 +178,10 @@ describe('IdempotencyService', () => {
     prisma.idempotencyRecord.updateMany.mockResolvedValue({ count: 1 });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
       retryFailedResponseStatusesGte: 500,
@@ -222,10 +222,10 @@ describe('IdempotencyService', () => {
     prisma.idempotencyRecord.updateMany.mockResolvedValue({ count: 0 });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
       retryFailedResponseStatusesGte: 500,
@@ -257,10 +257,10 @@ describe('IdempotencyService', () => {
     });
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
     });
@@ -293,10 +293,10 @@ describe('IdempotencyService', () => {
     );
 
     const result = await service.begin({
-      scope: 'apiKey:key_1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestHash: 'hash_1',
       ttlSeconds: 60,
     });
@@ -310,9 +310,9 @@ describe('IdempotencyService', () => {
     await service.complete({
       recordId: 'idr_1',
       responseStatus: 201,
-      responseBody: { id: 'memory_1' },
-      resourceType: 'memory',
-      resourceId: 'memory_1',
+      responseBody: { id: 'topic-1' },
+      resourceType: 'topic',
+      resourceId: 'topic-1',
     });
 
     expect(prisma.idempotencyRecord.update).toHaveBeenCalledWith(

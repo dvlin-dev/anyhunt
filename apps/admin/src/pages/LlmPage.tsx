@@ -42,7 +42,7 @@ export default function LlmPage() {
     <div className="space-y-6">
       <PageHeader
         title="LLM"
-        description="Configure providers and the default model used by Digest."
+        description="Configure encrypted providers and the default model used by the Agent."
       />
 
       <div className="grid gap-6 lg:grid-cols-2">

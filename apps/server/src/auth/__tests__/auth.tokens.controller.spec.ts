@@ -51,7 +51,6 @@ describe('AuthTokensController', () => {
           id: 'user_1',
           email: 'user@example.com',
           name: 'demo',
-          subscriptionTier: 'FREE',
           isAdmin: false,
         },
         refreshToken: {

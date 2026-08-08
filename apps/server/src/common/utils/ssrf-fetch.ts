@@ -13,6 +13,20 @@ export interface SafeFetchOptions extends RequestInit {
   maxRedirects?: number;
 }
 
+export class UnsafeUrlError extends Error {
+  constructor() {
+    super('Outbound URL is not allowed');
+    this.name = 'UnsafeUrlError';
+  }
+}
+
+export class TooManyRedirectsError extends Error {
+  constructor() {
+    super('Too many redirects');
+    this.name = 'TooManyRedirectsError';
+  }
+}
+
 export async function fetchWithSsrGuard(
   urlValidator: UrlValidator,
   url: string,
@@ -24,7 +38,7 @@ export async function fetchWithSsrGuard(
 
   while (true) {
     if (!(await urlValidator.isAllowed(currentUrl))) {
-      throw new Error(`URL not allowed: ${currentUrl}`);
+      throw new UnsafeUrlError();
     }
 
     const response = await serverHttpRaw({
@@ -48,7 +62,7 @@ export async function fetchWithSsrGuard(
     }
 
     if (remaining <= 0) {
-      throw new Error('Too many redirects');
+      throw new TooManyRedirectsError();
     }
 
     currentUrl = new URL(location, currentUrl).toString();

@@ -1,1 +1,1 @@
-export * from './pricing.config';
+export * from './environment';

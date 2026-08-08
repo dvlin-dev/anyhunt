@@ -27,7 +27,6 @@ const ADMIN_USER: AuthUser = {
   id: 'admin-1',
   email: 'admin@anyhunt.app',
   name: null,
-  subscriptionTier: 'enterprise',
   isAdmin: true,
 };
 

@@ -1,24 +1,23 @@
 import { defineConfig } from '@playwright/test';
 
-const port = 5174;
+process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 30_000,
+  timeout: 15 * 60_000,
   expect: {
-    timeout: 5_000,
+    timeout: 10_000,
   },
-  webServer: {
-    command: `pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort`,
-    url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      VITE_API_URL: 'http://localhost:3000',
-    },
-  },
+  fullyParallel: false,
+  workers: 1,
+  retries: process.env.CI ? 1 : 0,
+  reporter: 'list',
+  outputDir: '../../.artifacts/acceptance/playwright-admin',
   use: {
-    baseURL: `http://127.0.0.1:${port}`,
+    baseURL: process.env.ADMIN_E2E_BASE_URL ?? 'http://localhost:3002',
+    browserName: 'chromium',
+    channel: 'chrome',
+    headless: true,
     trace: 'on-first-retry',
   },
 });

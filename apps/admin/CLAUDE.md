@@ -14,4 +14,4 @@ Anyhunt 持续信息 Agent 产品的内部运营应用。
 - 服务端状态通过 `src/features` 下的函数式 API 模块接入 TanStack Query。
 - 共享展示基础组件来自 `@anyhunt/ui`。
 - 用户可见文案使用英文；运营术语可以沿用服务端领域名称。
-- Admin 不承载 Billing、Quota、Payment、Credits、会员等级或 Redemption 产品面。
+- Admin 不承载商业化、余额、会员等级或兑换产品面。

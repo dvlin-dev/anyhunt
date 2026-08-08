@@ -2,12 +2,12 @@
  * [POS]: 统一登录页面路由
  *
  * 支持 redirect 参数：
- * - /login?redirect=/subscriptions
+ * - /login?redirect=/
  */
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod/v3';
 import { getRedirectUrl } from '@/lib/redirect';
-import { AuthModalRouteShell } from '@/features/reader-shell/AuthModalRouteShell';
+import { AuthRouteShell } from '@/components/auth/auth-route-shell';
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -18,8 +18,8 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
   head: () => ({
     meta: [
-      { title: 'Sign In - Anyhunt Dev' },
-      { name: 'description', content: 'Sign in to your Anyhunt Dev account' },
+      { title: 'Sign In - Anyhunt' },
+      { name: 'description', content: 'Sign in to your Anyhunt account' },
     ],
   }),
 });
@@ -27,5 +27,5 @@ export const Route = createFileRoute('/login')({
 function LoginPage() {
   const { redirect: searchRedirect } = Route.useSearch();
   const redirectTo = getRedirectUrl(searchRedirect);
-  return <AuthModalRouteShell mode="login" redirectTo={redirectTo} />;
+  return <AuthRouteShell mode="login" redirectTo={redirectTo} />;
 }

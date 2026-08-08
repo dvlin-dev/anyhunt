@@ -2,7 +2,6 @@
  * [INPUT]: ExpressRequest（Cookie/Headers）与 Auth 配置依赖
  * [OUTPUT]: Better Auth 实例与可验证的用户会话信息
  * [POS]: 认证核心服务，封装 Better Auth 实例与会话查询
- *        subscriptionTier 基于有效订阅（ACTIVE 才计入付费）
  *
  * [PROTOCOL]: 仅在本文件 Header 事实或所属目录职责、结构、关键契约变化时，才更新 Header 或目录 CLAUDE.md。
  */
@@ -13,7 +12,6 @@ import { EmailService } from '../email';
 import { createBetterAuth, Auth, isAdminEmail } from './better-auth';
 import type { CurrentUserDto } from '../types';
 import { RedisService } from '../redis/redis.service';
-import { getEffectiveSubscriptionTier } from '../common/utils/subscription-tier';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -77,7 +75,7 @@ export class AuthService implements OnModuleInit {
 
   /**
    * 从 Express Request 中获取 Session
-   * 返回完整的用户信息（包括 subscriptionTier 和 isAdmin）
+   * 返回完整的用户信息（包括管理员状态）
    */
   async getSessionFromRequest(req: ExpressRequest): Promise<{
     session: { id: string; expiresAt: Date };
@@ -101,7 +99,7 @@ export class AuthService implements OnModuleInit {
     }
 
     // Better Auth 的 session.user 只包含基础字段
-    // 需要从数据库获取完整的用户信息（包括订阅和 isAdmin）
+    // 需要从数据库获取完整的用户信息和管理员状态
     const fullUser = await this.prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -110,9 +108,6 @@ export class AuthService implements OnModuleInit {
         name: true,
         isAdmin: true,
         deletedAt: true,
-        subscription: {
-          select: { tier: true, status: true },
-        },
       },
     });
 
@@ -136,10 +131,6 @@ export class AuthService implements OnModuleInit {
         id: fullUser.id,
         email: fullUser.email,
         name: fullUser.name,
-        subscriptionTier: getEffectiveSubscriptionTier(
-          fullUser.subscription,
-          'FREE',
-        ),
         isAdmin,
       },
     };

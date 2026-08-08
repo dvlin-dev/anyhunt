@@ -66,9 +66,12 @@ export function useLlmPageController() {
   const updateModelMutation = useUpdateAdminLlmModel();
   const deleteModelMutation = useDeleteAdminLlmModel();
 
-  const providers = providersQuery.data ?? [];
-  const models = modelsQuery.data ?? [];
-  const providerPresets = providerPresetsQuery.data?.providers ?? [];
+  const providers = useMemo(() => providersQuery.data ?? [], [providersQuery.data]);
+  const models = useMemo(() => modelsQuery.data ?? [], [modelsQuery.data]);
+  const providerPresets = useMemo(
+    () => providerPresetsQuery.data?.providers ?? [],
+    [providerPresetsQuery.data]
+  );
 
   const enabledProviderIds = useMemo(
     () => new Set(providers.filter((provider) => provider.enabled).map((provider) => provider.id)),
@@ -80,7 +83,7 @@ export function useLlmPageController() {
       .filter((model) => model.enabled && enabledProviderIds.has(model.providerId))
       .map((model) => model.modelId);
     const defaults = settingsQuery.data
-      ? [settingsQuery.data.defaultDigestModelId]
+      ? [settingsQuery.data.defaultAgentModelId]
       : [];
     return uniqueStrings([...available, ...defaults].filter(Boolean));
   }, [enabledProviderIds, models, settingsQuery.data]);
@@ -91,7 +94,7 @@ export function useLlmPageController() {
     }
 
     return {
-      defaultDigestModelId: settingsQuery.data.defaultDigestModelId,
+      defaultAgentModelId: settingsQuery.data.defaultAgentModelId,
     };
   }, [settingsQuery.data]);
 

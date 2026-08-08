@@ -35,20 +35,20 @@ export function UserDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认删除用户？</AlertDialogTitle>
+          <AlertDialogTitle>Delete this user?</AlertDialogTitle>
           <AlertDialogDescription>
-            此操作将软删除用户 <strong>{user?.email}</strong>
-            ，用户将无法登录，但数据会保留。此操作不可撤销。
+            This soft-deletes <strong>{user?.email}</strong>. The account can no longer sign in,
+            while its data remains available for operations. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? '删除中...' : '删除'}
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

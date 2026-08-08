@@ -12,4 +12,4 @@
 - 共享传输、认证与错误标准化保留在 `src/lib`。
 
 产品功能组围绕用户、Topic、Subscription、Skill、Run、Delivery、举报、队列、请求日志、
-LLM Provider 和 MCP 状态组织。不得新增 Billing、Credits、订单、兑换码或会员等级功能组。
+LLM Provider 和 MCP 状态组织。不得新增商业化、余额、订单、兑换码或会员等级功能组。

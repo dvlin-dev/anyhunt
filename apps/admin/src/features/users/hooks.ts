@@ -1,24 +1,22 @@
 /**
- * Users React Query Hooks
+ * [INPUT]: users API 参数
+ * [OUTPUT]: TanStack Query 用户查询与变更操作
+ * [POS]: users 功能的服务端状态边界
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { deleteUser, getCreditGrants, getUser, getUsers, grantCredits, updateUser } from './api';
-import type { UserQuery, UpdateUserRequest, CreditGrantsQuery, GrantCreditsRequest } from './types';
 
-/** Query Key 工厂 */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { deleteUser, getUser, getUsers, updateUser } from './api';
+import type { UpdateUserRequest, UserQuery } from './types';
+
 export const userKeys = {
   all: ['admin', 'users'] as const,
   lists: () => [...userKeys.all, 'list'] as const,
   list: (query?: UserQuery) => [...userKeys.lists(), query] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (id: string) => [...userKeys.details(), id] as const,
-  creditGrants: () => [...userKeys.all, 'credits', 'grants'] as const,
-  creditGrantsByUser: (id: string, query?: CreditGrantsQuery) =>
-    [...userKeys.creditGrants(), id, query] as const,
 };
 
-/** 获取用户列表 */
 export function useUsers(query: UserQuery = {}) {
   return useQuery({
     queryKey: userKeys.list(query),
@@ -26,69 +24,37 @@ export function useUsers(query: UserQuery = {}) {
   });
 }
 
-/** 获取单个用户 */
 export function useUser(id: string) {
   return useQuery({
     queryKey: userKeys.detail(id),
     queryFn: () => getUser(id),
-    enabled: !!id,
+    enabled: id.length > 0,
   });
 }
 
-export function useCreditGrants(userId: string, query: CreditGrantsQuery = {}) {
-  return useQuery({
-    queryKey: userKeys.creditGrantsByUser(userId, query),
-    queryFn: () => getCreditGrants(userId, query),
-    enabled: !!userId,
-  });
-}
-
-/** 更新用户 */
 export function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) => updateUser(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
-      toast.success('用户已更新');
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
+      updateUser(id, data),
+    onSuccess: async (user) => {
+      queryClient.setQueryData(userKeys.detail(user.id), user);
+      await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      toast.success('User updated');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || '更新失败');
-    },
+    onError: (error: Error) => toast.error(error.message || 'Update failed'),
   });
 }
 
-/** 删除用户 */
 export function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteUser(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
-      toast.success('用户已删除');
+    mutationFn: deleteUser,
+    onSuccess: async (_, id) => {
+      queryClient.removeQueries({ queryKey: userKeys.detail(id) });
+      await queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      toast.success('User deleted');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || '删除失败');
-    },
-  });
-}
-
-export function useGrantCredits() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ userId, data }: { userId: string; data: GrantCreditsRequest }) =>
-      grantCredits(userId, data),
-    onSuccess: async (result) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: userKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: userKeys.detail(result.userId) }),
-        queryClient.invalidateQueries({ queryKey: userKeys.creditGrants() }),
-      ]);
-      toast.success('Credits granted');
-    },
-    onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : 'Grant failed';
-      toast.error(message);
-    },
+    onError: (error: Error) => toast.error(error.message || 'Delete failed'),
   });
 }

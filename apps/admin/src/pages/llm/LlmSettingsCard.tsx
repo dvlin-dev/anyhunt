@@ -31,7 +31,7 @@ import {
 import type { UpdateLlmSettingsInput } from '@/features/llm';
 
 const formSchema = z.object({
-  defaultDigestModelId: z.string().trim().min(1).max(200),
+  defaultAgentModelId: z.string().trim().min(1).max(200),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,7 +57,7 @@ export function LlmSettingsCard({
 }: LlmSettingsCardProps) {
   const defaultValues = useMemo<FormValues>(
     () => ({
-      defaultDigestModelId: initialValues?.defaultDigestModelId ?? '',
+      defaultAgentModelId: initialValues?.defaultAgentModelId ?? '',
     }),
     [initialValues]
   );
@@ -111,10 +111,10 @@ export function LlmSettingsCard({
           <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="defaultDigestModelId"
+              name="defaultAgentModelId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Digest default model</FormLabel>
+                  <FormLabel>Agent default model</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
                     <FormControl>
                       <SelectTrigger>

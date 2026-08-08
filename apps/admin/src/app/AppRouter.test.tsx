@@ -4,13 +4,13 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthGuard } from './AuthGuard';
 import { AdminRoutes } from './AppRouter';
+import { ADMIN_NAV_GROUPS, ADMIN_PROTECTED_ROUTES } from './admin-routes';
 import { type AuthUser, useAuthStore } from '@/stores/auth';
 
 const ADMIN_USER: AuthUser = {
   id: 'admin-1',
   email: 'admin@anyhunt.app',
   name: null,
-  subscriptionTier: 'enterprise',
   isAdmin: true,
 };
 
@@ -106,5 +106,54 @@ describe('App router guards', () => {
     );
 
     expect(await screen.findByText('Page not found')).toBeTruthy();
+  });
+});
+
+describe('Admin 1.0 route contract', () => {
+  it('exposes only the supported operations surfaces', () => {
+    expect(ADMIN_PROTECTED_ROUTES.map((route) => route.id)).toEqual([
+      'dashboard',
+      'users',
+      'topics',
+      'reports',
+      'subscriptions',
+      'runs',
+      'deliveries',
+      'skills',
+      'queues',
+      'request-logs',
+      'llm',
+      'mcp',
+    ]);
+
+    expect(ADMIN_NAV_GROUPS.flatMap((group) => group.items.map((item) => item.label))).toEqual([
+      'Dashboard',
+      'Users',
+      'Topics',
+      'Reports',
+      'Subscriptions',
+      'Runs',
+      'Deliveries',
+      'Skills',
+      'Queues',
+      'Request logs',
+      'Models',
+      'MCP',
+    ]);
+  });
+
+  it('does not retain legacy commercial or Digest routes', () => {
+    const paths = ADMIN_PROTECTED_ROUTES.flatMap((route) => (route.path ? [route.path] : []));
+    const legacyRouteTerms = [
+      'billing',
+      'credits',
+      'digest',
+      'orders',
+      'payments',
+      'redemption',
+      'welcome',
+    ];
+
+    expect(paths.some((path) => legacyRouteTerms.some((term) => path.includes(term)))).toBe(false);
   });
 });

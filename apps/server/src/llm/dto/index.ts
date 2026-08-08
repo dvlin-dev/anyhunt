@@ -2,7 +2,6 @@ export {
   LlmProviderTypeSchema,
   type LlmProviderType,
   LlmModelIdSchema,
-  SubscriptionTierSchema,
   ReasoningConfigSchema,
   type ReasoningConfig,
   CreateLlmProviderSchema,

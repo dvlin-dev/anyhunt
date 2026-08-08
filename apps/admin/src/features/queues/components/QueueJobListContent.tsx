@@ -43,10 +43,10 @@ function QueueJobsTable({
       <TableHeader>
         <TableRow>
           <TableHead>ID</TableHead>
-          <TableHead>任务名</TableHead>
-          <TableHead>尝试次数</TableHead>
-          <TableHead>时间</TableHead>
-          {showFailedReason ? <TableHead>错误原因</TableHead> : null}
+          <TableHead>Job</TableHead>
+          <TableHead>Attempts</TableHead>
+          <TableHead>Queued</TableHead>
+          {showFailedReason ? <TableHead>Sanitized error</TableHead> : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -54,13 +54,13 @@ function QueueJobsTable({
           <TableRow key={job.id}>
             <TableCell className="font-mono text-xs">{job.id}</TableCell>
             <TableCell>{job.name}</TableCell>
-            <TableCell>{job.attemptsMade}</TableCell>
+            <TableCell>{job.attemptsMade} / {job.maxAttempts}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
-              {new Date(job.timestamp).toLocaleTimeString('zh-CN')}
+              {new Date(job.timestamp).toLocaleString()}
             </TableCell>
             {showFailedReason ? (
               <TableCell className="max-w-xs truncate text-xs text-destructive">
-                {job.failedReason}
+                {job.error}
               </TableCell>
             ) : null}
           </TableRow>
@@ -89,12 +89,12 @@ export function QueueJobListContent({ queueName, status }: QueueJobListContentPr
     case 'error':
       return (
         <ListErrorState
-          message={error instanceof Error ? error.message : '加载队列任务失败'}
+          message={error instanceof Error ? error.message : 'Failed to load queue jobs'}
           messageClassName="text-destructive text-sm"
         />
       );
     case 'empty':
-      return <ListEmptyState message="暂无任务" className="py-8 text-center" />;
+      return <ListEmptyState message="No jobs in this state" className="py-8 text-center" />;
     case 'ready':
       return <QueueJobsTable items={data?.items ?? []} showFailedReason={status === 'failed'} />;
     default:

@@ -117,7 +117,6 @@ describe('AuthService', () => {
         name: 'Test User',
         isAdmin: false,
         deletedAt: new Date(), // Soft deleted
-        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);
@@ -137,7 +136,6 @@ describe('AuthService', () => {
         name: 'Test User',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'PRO', status: 'ACTIVE' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);
@@ -151,29 +149,9 @@ describe('AuthService', () => {
           id: 'user_1',
           email: 'test@example.com',
           name: 'Test User',
-          subscriptionTier: 'PRO',
           isAdmin: false,
         },
       });
-    });
-
-    it('should default tier to FREE when no subscription', async () => {
-      mockAuth.api.getSession.mockResolvedValue({
-        user: { id: 'user_1' },
-        session: { id: 'session_1', expiresAt: new Date() },
-      });
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user_1',
-        email: 'test@example.com',
-        name: 'Test User',
-        isAdmin: false,
-        deletedAt: null,
-        subscription: null, // No subscription
-      });
-
-      const result = await service.getSessionFromRequest(mockRequest);
-
-      expect(result?.user.subscriptionTier).toBe('FREE');
     });
 
     it('should handle admin users', async () => {
@@ -187,7 +165,6 @@ describe('AuthService', () => {
         name: 'Admin User',
         isAdmin: true,
         deletedAt: null,
-        subscription: { tier: 'TEAM', status: 'ACTIVE' },
       });
 
       const result = await service.getSessionFromRequest(mockRequest);
@@ -209,7 +186,6 @@ describe('AuthService', () => {
         name: 'Admin User',
         isAdmin: false,
         deletedAt: null,
-        subscription: { tier: 'FREE', status: 'ACTIVE' },
       });
       mockPrisma.user.update.mockResolvedValue({
         id: 'user_1',

@@ -9,7 +9,7 @@ import { IdempotencyRequestInProgressError } from '../idempotency.errors';
 import type { IdempotencyService } from '../idempotency.service';
 
 interface MockCreateResponse {
-  results: Array<{ id: string }>;
+  topic: { id: string };
 }
 
 describe('IdempotencyExecutorService', () => {
@@ -30,35 +30,35 @@ describe('IdempotencyExecutorService', () => {
   it('runs handler and persists completed response when request starts', async () => {
     const execute = vi
       .fn()
-      .mockResolvedValue({ results: [{ id: 'memory-1' }] });
+      .mockResolvedValue({ topic: { id: 'topic-1' } });
     const { service, idempotencyService } = createService({
       begin: vi.fn().mockResolvedValue({ kind: 'started', recordId: 'idr_1' }),
       complete: vi.fn().mockResolvedValue(undefined),
     });
 
     const result = await service.execute({
-      scope: 'digest:subscriptions:create:user-1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestBody: { foo: 'bar' },
       ttlSeconds: 3600,
       execute,
       responseStatus: 200,
       describeResponse: (response: MockCreateResponse) => ({
-        resourceType: 'memory',
-        resourceId: response.results[0]?.id,
+        resourceType: 'topic',
+        resourceId: response.topic.id,
       }),
     });
 
-    expect(result).toEqual({ results: [{ id: 'memory-1' }] });
+    expect(result).toEqual({ topic: { id: 'topic-1' } });
     expect(execute).toHaveBeenCalledOnce();
     expect(idempotencyService.begin as any).toHaveBeenCalledWith(
       expect.objectContaining({
-        scope: 'digest:subscriptions:create:user-1',
+        scope: 'topics:create:user-1',
         idempotencyKey: 'idem_1',
         method: 'POST',
-        path: '/api/v1/memories',
+        path: '/api/v1/app/topics',
         ttlSeconds: 3600,
         requestHash: expect.any(String),
       }),
@@ -66,16 +66,16 @@ describe('IdempotencyExecutorService', () => {
     expect(idempotencyService.complete as any).toHaveBeenCalledWith({
       recordId: 'idr_1',
       responseStatus: 200,
-      responseBody: { results: [{ id: 'memory-1' }] },
-      resourceType: 'memory',
-      resourceId: 'memory-1',
+      responseBody: { topic: { id: 'topic-1' } },
+      resourceType: 'topic',
+      resourceId: 'topic-1',
     });
   });
 
   it('forwards retry threshold to idempotency service begin', async () => {
     const execute = vi
       .fn()
-      .mockResolvedValue({ results: [{ id: 'memory-1' }] });
+      .mockResolvedValue({ topic: { id: 'topic-1' } });
     const begin = vi
       .fn()
       .mockResolvedValue({ kind: 'started', recordId: 'idr_1' });
@@ -85,10 +85,10 @@ describe('IdempotencyExecutorService', () => {
     });
 
     await service.execute({
-      scope: 'digest:subscriptions:create:user-1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestBody: { foo: 'bar' },
       ttlSeconds: 3600,
       responseStatus: 200,
@@ -109,22 +109,22 @@ describe('IdempotencyExecutorService', () => {
       begin: vi.fn().mockResolvedValue({
         kind: 'replay',
         responseStatus: 200,
-        responseBody: { results: [{ id: 'memory-1' }] },
+        responseBody: { topic: { id: 'topic-1' } },
       }),
     });
 
     const result = await service.execute({
-      scope: 'digest:subscriptions:create:user-1',
+      scope: 'topics:create:user-1',
       idempotencyKey: 'idem_1',
       method: 'POST',
-      path: '/api/v1/memories',
+      path: '/api/v1/app/topics',
       requestBody: { foo: 'bar' },
       ttlSeconds: 3600,
       execute,
       responseStatus: 200,
     });
 
-    expect(result).toEqual({ results: [{ id: 'memory-1' }] });
+    expect(result).toEqual({ topic: { id: 'topic-1' } });
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -143,10 +143,10 @@ describe('IdempotencyExecutorService', () => {
 
     await expect(
       service.execute({
-        scope: 'digest:subscriptions:create:user-1',
+        scope: 'topics:create:user-1',
         idempotencyKey: 'idem_1',
         method: 'POST',
-        path: '/api/v1/memories',
+        path: '/api/v1/app/topics',
         requestBody: { foo: 'bar' },
         ttlSeconds: 3600,
         execute,
@@ -163,10 +163,10 @@ describe('IdempotencyExecutorService', () => {
 
     await expect(
       service.execute({
-        scope: 'digest:subscriptions:create:user-1',
+        scope: 'topics:create:user-1',
         idempotencyKey: 'idem_1',
         method: 'POST',
-        path: '/api/v1/memories',
+        path: '/api/v1/app/topics',
         requestBody: { foo: 'bar' },
         ttlSeconds: 3600,
         execute: vi.fn(),
@@ -177,8 +177,8 @@ describe('IdempotencyExecutorService', () => {
 
   it('marks idempotency record failed when handler throws http exception', async () => {
     const error = new BadRequestException({
-      code: 'MEMORY_INVALID',
-      message: 'invalid memory payload',
+      code: 'TOPIC_INVALID',
+      message: 'invalid topic payload',
       details: { reason: 'bad_input' },
     });
     const execute = vi.fn().mockRejectedValue(error);
@@ -189,10 +189,10 @@ describe('IdempotencyExecutorService', () => {
 
     await expect(
       service.execute({
-        scope: 'digest:subscriptions:create:user-1',
+        scope: 'topics:create:user-1',
         idempotencyKey: 'idem_1',
         method: 'POST',
-        path: '/api/v1/memories',
+        path: '/api/v1/app/topics',
         requestBody: { foo: 'bar' },
         ttlSeconds: 3600,
         execute,
@@ -204,11 +204,11 @@ describe('IdempotencyExecutorService', () => {
       recordId: 'idr_1',
       responseStatus: 400,
       responseBody: {
-        code: 'MEMORY_INVALID',
-        message: 'invalid memory payload',
+        code: 'TOPIC_INVALID',
+        message: 'invalid topic payload',
         details: { reason: 'bad_input' },
       },
-      errorCode: 'MEMORY_INVALID',
+      errorCode: 'TOPIC_INVALID',
     });
   });
 });

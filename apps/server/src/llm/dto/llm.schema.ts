@@ -13,8 +13,6 @@ export type LlmProviderType = z.infer<typeof LlmProviderTypeSchema>;
 
 export const LlmModelIdSchema = z.string().trim().min(1).max(200);
 
-export const SubscriptionTierSchema = z.enum(['FREE', 'BASIC', 'PRO', 'TEAM']);
-
 export const ReasoningConfigSchema = z.object({
   enabled: z.boolean().default(false),
   effort: z
@@ -62,7 +60,6 @@ export const CreateLlmModelSchema = z.object({
   enabled: z.boolean().optional(),
   inputTokenPrice: z.number().min(0),
   outputTokenPrice: z.number().min(0),
-  minTier: SubscriptionTierSchema,
   maxContextTokens: z.number().int().positive(),
   maxOutputTokens: z.number().int().positive(),
   capabilities: LlmModelCapabilitiesSchema,
@@ -78,7 +75,6 @@ export const UpdateLlmModelSchema = z.object({
   enabled: z.boolean().optional(),
   inputTokenPrice: z.number().min(0).optional(),
   outputTokenPrice: z.number().min(0).optional(),
-  minTier: SubscriptionTierSchema.optional(),
   maxContextTokens: z.number().int().positive().optional(),
   maxOutputTokens: z.number().int().positive().optional(),
   capabilities: LlmModelCapabilitiesSchema.optional(),
@@ -88,6 +84,6 @@ export const UpdateLlmModelSchema = z.object({
 export type UpdateLlmModelDto = z.infer<typeof UpdateLlmModelSchema>;
 
 export const UpdateLlmSettingsSchema = z.object({
-  defaultDigestModelId: LlmModelIdSchema,
+  defaultAgentModelId: LlmModelIdSchema,
 });
 export type UpdateLlmSettingsDto = z.infer<typeof UpdateLlmSettingsSchema>;

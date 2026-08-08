@@ -5,9 +5,8 @@
  */
 
 import { useState } from 'react';
-import { RefreshCw, TriangleAlert } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button, PageHeader } from '@anyhunt/ui';
-import { useCleanupStaleJobs } from '@/features/jobs';
 import {
   QueueActionConfirmDialog,
   QueueCardsGrid,
@@ -28,7 +27,7 @@ interface ConfirmDialogState {
 }
 
 export default function QueuesPage() {
-  const [selectedQueue, setSelectedQueue] = useState<QueueName>('scrape');
+  const [selectedQueue, setSelectedQueue] = useState<QueueName>('topic-run');
   const [selectedStatus, setSelectedStatus] = useState<QueueJobStatus>('waiting');
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
@@ -39,7 +38,6 @@ export default function QueuesPage() {
   const { mutate: retryAllFailed, isPending: isRetrying } = useRetryAllFailed();
   const { mutate: cleanQueue, isPending: isCleaning } = useCleanQueue();
   const { mutate: togglePause } = usePauseQueue();
-  const { mutate: cleanupStaleJobs, isPending: isCleaningStale } = useCleanupStaleJobs();
 
   const selectedStats = data?.queues.find((queue) => queue.name === selectedQueue);
   const isPaused = (selectedStats?.paused ?? 0) > 0;
@@ -62,9 +60,6 @@ export default function QueuesPage() {
       case 'clean-failed':
         cleanQueue({ name: selectedQueue, status: 'failed' });
         break;
-      case 'cleanup-stale':
-        cleanupStaleJobs({ maxAgeMinutes: 30 });
-        break;
       default:
         break;
     }
@@ -78,19 +73,11 @@ export default function QueuesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <PageHeader title="Queues" description="BullMQ 队列监控" />
+        <PageHeader title="Queues" description="Monitor and recover background work." />
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => openConfirmDialog('cleanup-stale')}
-            disabled={isCleaningStale}
-          >
-            <TriangleAlert className="mr-2 h-4 w-4" />
-            清理卡住任务
-          </Button>
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            刷新
+            Refresh
           </Button>
         </div>
       </div>

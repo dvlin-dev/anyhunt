@@ -10,7 +10,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   PRESET_LLM_PROVIDERS,
-  DEFAULT_LLM_DIGEST_MODEL_ID,
+  DEFAULT_LLM_AGENT_MODEL_ID,
   DEFAULT_LLM_SETTINGS_ID,
 } from './llm.constants';
 import { LlmSecretService } from './llm-secret.service';
@@ -60,7 +60,7 @@ export class LlmAdminService {
     excludeModelRecordId?: string;
   }): Promise<void> {
     const settings = await this.getSettings();
-    const defaultModelIds = [settings.defaultDigestModelId];
+    const defaultModelIds = [settings.defaultAgentModelId];
 
     for (const modelId of defaultModelIds) {
       const before = await this.countEnabledMappingsForModelId({
@@ -96,7 +96,7 @@ export class LlmAdminService {
     return this.prisma.llmSettings.create({
       data: {
         id: DEFAULT_LLM_SETTINGS_ID,
-        defaultDigestModelId: DEFAULT_LLM_DIGEST_MODEL_ID,
+        defaultAgentModelId: DEFAULT_LLM_AGENT_MODEL_ID,
       },
     });
   }
@@ -119,16 +119,16 @@ export class LlmAdminService {
   }
 
   async updateSettings(dto: UpdateLlmSettingsDto): Promise<LlmSettingsDto> {
-    await this.assertModelAvailable(dto.defaultDigestModelId);
+    await this.assertModelAvailable(dto.defaultAgentModelId);
 
     return this.prisma.llmSettings.upsert({
       where: { id: DEFAULT_LLM_SETTINGS_ID },
       create: {
         id: DEFAULT_LLM_SETTINGS_ID,
-        defaultDigestModelId: dto.defaultDigestModelId,
+        defaultAgentModelId: dto.defaultAgentModelId,
       },
       update: {
-        defaultDigestModelId: dto.defaultDigestModelId,
+        defaultAgentModelId: dto.defaultAgentModelId,
       },
     });
   }
@@ -246,7 +246,6 @@ export class LlmAdminService {
       displayName: m.displayName,
       inputTokenPrice: m.inputTokenPrice,
       outputTokenPrice: m.outputTokenPrice,
-      minTier: m.minTier,
       maxContextTokens: m.maxContextTokens,
       maxOutputTokens: m.maxOutputTokens,
       capabilitiesJson: m.capabilitiesJson,
@@ -280,7 +279,6 @@ export class LlmAdminService {
         enabled: dto.enabled ?? true,
         inputTokenPrice: dto.inputTokenPrice,
         outputTokenPrice: dto.outputTokenPrice,
-        minTier: dto.minTier,
         maxContextTokens: dto.maxContextTokens,
         maxOutputTokens: dto.maxOutputTokens,
         capabilitiesJson: capabilitiesJsonValue,
@@ -299,7 +297,6 @@ export class LlmAdminService {
       displayName: created.displayName,
       inputTokenPrice: created.inputTokenPrice,
       outputTokenPrice: created.outputTokenPrice,
-      minTier: created.minTier,
       maxContextTokens: created.maxContextTokens,
       maxOutputTokens: created.maxOutputTokens,
       capabilitiesJson: created.capabilitiesJson,
@@ -329,7 +326,7 @@ export class LlmAdminService {
       throw new BadRequestException('LLM model not found');
     }
 
-    const isDefaultModel = current.modelId === settings.defaultDigestModelId;
+    const isDefaultModel = current.modelId === settings.defaultAgentModelId;
     const wouldRemoveDefaultMapping =
       isDefaultModel &&
       current.enabled === true &&
@@ -383,7 +380,6 @@ export class LlmAdminService {
       displayName: updated.displayName,
       inputTokenPrice: updated.inputTokenPrice,
       outputTokenPrice: updated.outputTokenPrice,
-      minTier: updated.minTier,
       maxContextTokens: updated.maxContextTokens,
       maxOutputTokens: updated.maxOutputTokens,
       capabilitiesJson: updated.capabilitiesJson,

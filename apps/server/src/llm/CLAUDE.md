@@ -15,4 +15,4 @@ Pi Agent 使用的动态 Provider 与模型配置。
 - `ANYHUNT_LLM_SECRET_KEY` 是 Base64 编码的 32 字节密钥。
 - 支持 OpenAI、OpenAI-compatible、OpenRouter、Anthropic 与 Google。
 - 不建立第二套凭据表、Agent 抽象、独立抽取模型或用户级模型策略。
-- 旧 AI SDK Adapter 在 Pi 路径验证完成后删除，不保留双运行时。
+- Provider 解析只返回 Pi Adapter 所需的脱敏元数据、上游模型 ID 与运行时密钥。

@@ -49,7 +49,7 @@ describe('fetchWithSsrGuard', () => {
         mockValidator as unknown as UrlValidator,
         'https://example.com',
       ),
-    ).rejects.toThrow('URL not allowed');
+    ).rejects.toThrow('Outbound URL is not allowed');
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -92,7 +92,7 @@ describe('fetchWithSsrGuard', () => {
         'https://example.com',
         { maxRedirects: 2 },
       ),
-    ).rejects.toThrow('URL not allowed');
+    ).rejects.toThrow('Outbound URL is not allowed');
   });
 
   it('should reject too many redirects', async () => {

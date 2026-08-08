@@ -10,13 +10,20 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 
 // Mock Resend - 使用 hoisted mock，确保在 ESM/transform 环境中稳定生效
-const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
+const { mockSend, mockSmtpSend, mockCreateTransport } = vi.hoisted(() => ({
+  mockSend: vi.fn(),
+  mockSmtpSend: vi.fn(),
+  mockCreateTransport: vi.fn(),
+}));
 vi.mock('resend', () => ({
   Resend: class MockResend {
     emails = {
       send: mockSend,
     };
   },
+}));
+vi.mock('nodemailer', () => ({
+  createTransport: mockCreateTransport,
 }));
 
 describe('EmailService', () => {
@@ -25,6 +32,9 @@ describe('EmailService', () => {
 
   beforeEach(async () => {
     mockSend.mockReset();
+    mockSmtpSend.mockReset();
+    mockCreateTransport.mockReset();
+    mockCreateTransport.mockReturnValue({ sendMail: mockSmtpSend });
     vi.resetModules();
     ({ EmailService: EmailServiceCtor } = await import('../email.service'));
 
@@ -80,6 +90,25 @@ describe('EmailService', () => {
 
       expect(mockSend).not.toHaveBeenCalled();
     });
+
+    it('uses SMTP when SMTP_URL is configured', async () => {
+      const service = createService({ SMTP_URL: 'smtp://mailpit:1025' });
+      mockSmtpSend.mockResolvedValue({ messageId: 'smtp-email-1' });
+
+      await service.sendEmail('recipient@example.com', 'Subject', 'Body', {
+        headers: { 'List-Unsubscribe': '<https://example.com/unsubscribe>' },
+      });
+
+      expect(mockCreateTransport).toHaveBeenCalledWith('smtp://mailpit:1025');
+      expect(mockSmtpSend).toHaveBeenCalledWith({
+        from: 'Test <test@example.com>',
+        to: 'recipient@example.com',
+        subject: 'Subject',
+        html: 'Body',
+        headers: { 'List-Unsubscribe': '<https://example.com/unsubscribe>' },
+      });
+      expect(mockSend).not.toHaveBeenCalled();
+    });
   });
 
   describe('sendOTP', () => {
@@ -127,6 +156,15 @@ describe('EmailService', () => {
   });
 
   describe('configuration', () => {
+    it('reports SMTP as configured without Resend', () => {
+      const service = createService({
+        SMTP_URL: 'smtp://mailpit:1025',
+        RESEND_API_KEY: undefined,
+      });
+
+      expect(service.isConfigured()).toBe(true);
+    });
+
     it('should use default from address when not configured', async () => {
       const service = createService({ EMAIL_FROM: undefined });
       mockSend.mockResolvedValue({ id: 'email-1' });

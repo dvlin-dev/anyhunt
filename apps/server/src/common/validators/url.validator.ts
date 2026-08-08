@@ -22,11 +22,6 @@ export class UrlValidator {
     '.internal',
   ];
   private readonly DNS_TIMEOUT_MS = 3000;
-  private readonly CACHE_TTL_MS = 60_000;
-  private readonly cache = new Map<
-    string,
-    { allowed: boolean; expiresAt: number }
-  >();
 
   /**
    * 验证 URL 是否允许访问
@@ -52,20 +47,12 @@ export class UrlValidator {
       return false;
     }
 
-    const cached = this.getCachedResult(hostname);
-    if (cached !== null) {
-      return cached;
-    }
-
     const addresses = await this.resolveHost(hostname);
-    if (addresses.length === 0) {
-      this.setCachedResult(hostname, false);
-      return false;
-    }
+    if (addresses.length === 0) return false;
 
-    const isAllowed = addresses.every((address) => this.isPublicIp(address));
-    this.setCachedResult(hostname, isAllowed);
-    return isAllowed;
+    // Never cache a positive DNS decision: each outbound request and redirect
+    // must observe the current address set to fail closed on DNS rebinding.
+    return addresses.every((address) => this.isPublicIp(address));
   }
 
   private parseUrl(url: string): URL | null {
@@ -95,23 +82,6 @@ export class UrlValidator {
     return this.BLOCKED_DOMAIN_SUFFIXES.some((suffix) =>
       hostname.endsWith(suffix),
     );
-  }
-
-  private getCachedResult(hostname: string): boolean | null {
-    const cached = this.cache.get(hostname);
-    if (!cached) return null;
-    if (cached.expiresAt <= Date.now()) {
-      this.cache.delete(hostname);
-      return null;
-    }
-    return cached.allowed;
-  }
-
-  private setCachedResult(hostname: string, allowed: boolean): void {
-    this.cache.set(hostname, {
-      allowed,
-      expiresAt: Date.now() + this.CACHE_TTL_MS,
-    });
   }
 
   private async resolveHost(hostname: string): Promise<string[]> {
